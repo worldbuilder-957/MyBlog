@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 专家之路 - 学习路线图</title>
+    <style>
+        :root {
+            /* 基础底色：柔和的现代浅色系 */
+            --bg-color: #f4f6f8;       /* 页面背景：极浅的灰蓝 */
+            --stage-bg: #ffffff;       /* 阶段背景：纯白 */
+            --card-bg: #ffffff;        /* 卡片背景 */
+            --text-main: #2c3e50;      /* 主文字：深岩灰 */
+            --text-muted: #7f8c8d;     /* 次要文字：中灰 */
+            --border-color: #e1e4e8;   /* 边框线 */
+            
+            /* 状态颜色 */
+            --locked-bg: #e9ecef;      /* 锁定背景 */
+            --locked-text: #adb5bd;    /* 锁定文字 */
+            
+            /* 类别主题色 (低饱和度，高品味) */
+            --color-math: #00897b;     /* 数学：松石绿 */
+            --color-cs: #1e88e5;       /* CS：海空蓝 */
+            --color-ai-base: #f9a825;  /* AI基础：琥珀黄 */
+            --color-ai-core: #d32f2f;  /* AI核心：铁锈红 */
+            --color-adv: #5e35b1;      /* 前沿：鸢尾紫 */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 { 
+            margin: 0; 
+            color: var(--text-main); 
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        p.subtitle { 
+            color: var(--text-muted); 
+            margin-top: 10px; 
+            font-size: 1.1em;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        button.reset-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9em;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        button.reset-btn:hover { 
+            border-color: var(--color-cs);
+            color: var(--color-cs);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .tree-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-bottom: 80px; /* Space for progress bar */
+        }
+
+        /* 阶段容器设计 */
+        .stage {
+            background: transparent;
+            padding: 10px 0;
+        }
+
+        .stage-header {
+            display: flex;
+            align-items: baseline;
+            gap: 15px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .stage-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        
+        .stage-count {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            font-family: monospace;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .stage-desc {
+            color: var(--text-muted);
+            font-size: 0.95em;
+            margin-left: auto; /* 推到右边 */
+            font-style: italic;
+        }
+
+        .node-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 24px;
+        }
+
+        /* 卡片核心设计 */
+        .node {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid transparent; /* 预留边框位置 */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部彩色线条 (Tag) */
+        .node::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: #ccc; /* Default */
+            opacity: 0.8;
+        }
+
+        /* 不同类别的颜色 */
+        .type-math::after { background: var(--color-math); }
+        .type-cs::after { background: var(--color-cs); }
+        .type-ai-base::after { background: var(--color-ai-base); }
+        .type-ai-core::after { background: var(--color-ai-core); }
+        .type-adv::after { background: var(--color-adv); }
+        
+        /* 文本颜色配合类别 */
+        .type-math .tag-text { color: var(--color-math); }
+        .type-cs .tag-text { color: var(--color-cs); }
+        .type-ai-base .tag-text { color: var(--color-ai-base); }
+        .type-ai-core .tag-text { color: var(--color-ai-core); }
+        .type-adv .tag-text { color: var(--color-adv); }
+
+        /* 状态：锁定 (Locked) */
+        .node.locked {
+            background-color: var(--locked-bg);
+            box-shadow: none;
+            cursor: not-allowed;
+            border: 1px solid transparent;
+        }
+        .node.locked::after { background: #cbd5e0; } /* 锁定状态顶部条也是灰色 */
+        .node.locked h3, .node.locked p { color: var(--locked-text); }
+        .node.locked .tag-text { color: var(--locked-text); }
+        
+        /* 状态：已解锁 (Unlocked - Hover) */
+        .node.unlocked:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+        }
+        /* 高亮依赖时 */
+        .node.highlight-parent {
+            border-color: var(--color-ai-base); /* 临时高亮色 */
+            box-shadow: 0 0 0 3px rgba(249, 168, 37, 0.2);
+        }
+
+        /* 状态：已完成 (Completed) */
+        .node.completed {
+            background-color: #ffffff;
+            border: 1px solid; /* Use category color for border */
+        }
+        
+        /* 完成状态的边框色 */
+        .node.completed.type-math { border-color: rgba(0, 137, 123, 0.3); background: linear-gradient(to bottom right, #fff, #e0f2f1); }
+        .node.completed.type-cs { border-color: rgba(30, 136, 229, 0.3); background: linear-gradient(to bottom right, #fff, #e3f2fd); }
+        .node.completed.type-ai-base { border-color: rgba(249, 168, 37, 0.3); background: linear-gradient(to bottom right, #fff, #fff8e1); }
+        .node.completed.type-ai-core { border-color: rgba(211, 47, 47, 0.3); background: linear-gradient(to bottom right, #fff, #ffebee); }
+        .node.completed.type-adv { border-color: rgba(94, 53, 177, 0.3); background: linear-gradient(to bottom right, #fff, #ede7f6); }
+
+        /* 内容排版 */
+        .node-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            margin-bottom: 12px; 
+        }
+        .node h3 { 
+            margin: 0; 
+            font-size: 1.05em; 
+            font-weight: 600; 
+            line-height: 1.3;
+        }
+        .node p { 
+            font-size: 0.85em; 
+            color: var(--text-muted); 
+            margin: 0; 
+            margin-bottom: auto; /* Push footer to bottom */
+        }
+        
+        .tag-text {
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .criteria-box {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            font-size: 0.8em;
+            color: var(--text-main);
+            background: rgba(255,255,255,0.5);
+            display: none; /* Hidden by default */
+        }
+        .node:hover .criteria-box { display: block; }
+        
+        .status-icon { 
+            font-size: 1.2em; 
+            margin-left: 10px;
+            color: var(--border-color); 
+        }
+        .node.completed .status-icon { color: inherit; } /* Use category color */
+        .node.unlocked .status-icon { color: #ddd; }
+
+        /* 底部进度条 */
+        .progress-container {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+        }
+        .progress-wrapper {
+            width: 600px;
+            max-width: 80%;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .progress-bar-bg {
+            flex-grow: 1;
+            height: 8px;
+            background: #edf2f7;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--text-main); /* 极简风格，使用深色进度条 */
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+        }
+        .progress-text { 
+            font-size: 0.9em; 
+            color: var(--text-main); 
+            font-weight: 700; 
+            min-width: 40px;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>AI 专家之路</h1>
+    <p class="subtitle">融合哈工大工程基础与清华大学理论深度的学习路线图</p>
+</header>
+
+<div class="controls">
+    <button class="reset-btn" onclick="resetProgress()">重置进度</button>
+</div>
+
+<div class="tree-container" id="treeRoot">
+    </div>
+
+<div class="progress-container">
+    <div class="progress-wrapper">
+        <span style="color: var(--text-muted); font-size: 0.9em;">总进度</span>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+        <span class="progress-text" id="progressText">0%</span>
+    </div>
+</div>
+
+<script>
+    // 技能树数据结构 (保持不变)
+    const stages = [
+        {
+            id: 1,
+            name: "阶段一：奠基",
+            desc: "数理思维与编程基础",
+            skills: [
+                { id: "s1_1", type: "type-math", title: "高等数学", desc: "微积分A/B", criteria: "掌握导数、链式法则、积分、泰勒展开。理解函数逼近。", parents: [] },
+                { id: "s1_2", type: "type-math", title: "线性代数", desc: "代数与几何", criteria: "精通矩阵乘法、逆矩阵。深刻理解特征值/SVD分解。", parents: [] },
+                { id: "s1_3", type: "type-math", title: "概率统计", desc: "概率论与数理统计", criteria: "理解贝叶斯定理、高斯分布、MLE/MAP。", parents: ["s1_1"] },
+                { id: "s1_4", type: "type-cs", title: "基础编程", desc: "Python/C++", criteria: "掌握OOP、循环、函数。熟练使用Git。", parents: [] }
+            ]
+        },
+        {
+            id: 2,
+            name: "阶段二：CS基石",
+            desc: "扎实的工程系统能力 (HIT特色)",
+            skills: [
+                { id: "s2_1", type: "type-math", title: "离散数学", desc: "集合论与图论", criteria: "掌握图(Graph)、树(Tree)的概念，能描述关系。", parents: ["s1_4"] },
+                { id: "s2_2", type: "type-cs", title: "数据结构与算法", desc: "算法设计与分析", criteria: "徒手实现链表/堆/二叉树。掌握快排、DFS/BFS、大O分析。", parents: ["s1_4", "s2_1"] },
+                { id: "s2_3", type: "type-cs", title: "计算机系统", desc: "组成原理/OS", criteria: "理解CPU缓存、进程vs线程、虚拟内存、死锁。", parents: ["s1_4", "s2_2"] },
+                { id: "s2_4", type: "type-cs", title: "网络与数据库", desc: "Net/DB", criteria: "理解TCP/IP、HTTP。熟练使用SQL (Join/Group)。", parents: ["s2_3"] },
+                { id: "s2_5", type: "type-cs", title: "计算理论", desc: "自动机 (THU特色)", criteria: "理解可计算性、P vs NP问题。", parents: ["s2_1", "s2_2"] }
+            ]
+        },
+        {
+            id: 3,
+            name: "阶段三：AI进阶",
+            desc: "连接数理与应用的桥梁",
+            skills: [
+                { id: "s3_1", type: "type-ai-base", title: "AI导论", desc: "搜索与规划", criteria: "徒手实现A*算法或Minimax博弈算法。", parents: ["s2_2"] },
+                { id: "s3_2", type: "type-ai-base", title: "AI应用数学", desc: "数学AI化", criteria: "用NumPy进行高效矩阵运算，理解高维梯度。", parents: ["s1_1", "s1_2"] },
+                { id: "s3_3", type: "type-ai-base", title: "经典机器学习", desc: "Scikit-Learn", criteria: "掌握逻辑回归、SVM、K-Means。理解偏差-方差权衡。", parents: ["s3_1", "s3_2"] }
+            ]
+        },
+        {
+            id: 4,
+            name: "阶段四：四大支柱",
+            desc: "现代深度学习核心 (THU特色)",
+            skills: [
+                { id: "s4_1", type: "type-ai-core", title: "深度学习 DL", desc: "PyTorch/TF", criteria: "理解反向传播。从零搭建CNN和RNN。理解Adam/Dropout。", parents: ["s3_3"] },
+                { id: "s4_2", type: "type-ai-core", title: "计算机视觉 CV", desc: "Image/Video", criteria: "掌握ResNet/YOLO。解决分类、检测任务。", parents: ["s4_1"] },
+                { id: "s4_3", type: "type-ai-core", title: "自然语言处理", desc: "NLP/LLM", criteria: "理解Transformer/Attention。使用BERT/GPT做微调。", parents: ["s4_1"] },
+                { id: "s4_4", type: "type-ai-core", title: "数据挖掘 DM", desc: "Big Data", criteria: "Spark/MapReduce。推荐系统与关联规则。", parents: ["s3_3"] }
+            ]
+        },
+        {
+            id: 5,
+            name: "阶段五：前沿",
+            desc: "AI+X 交叉学科与系统落地",
+            skills: [
+                { id: "s5_1", type: "type-adv", title: "AI系统工程", desc: "MLOps/Deployment", criteria: "Docker封装模型，部署API服务。优化推理速度。", parents: ["s2_3", "s4_1"] },
+                { id: "s5_2", type: "type-adv", title: "前沿交叉", desc: "Bio/Neuro/Quantum", criteria: "阅读SOTA论文并复现核心思想。", parents: ["s4_1"] },
+                { id: "s5_3", type: "type-adv", title: "综合实战", desc: "毕设/项目", criteria: "完成一个完整的、具有创新性的AI系统或研究论文。", parents: ["s4_2", "s4_3", "s5_1"] }
+            ]
+        }
+    ];
+
+    // 初始化状态
+    let userProgress = JSON.parse(localStorage.getItem('aiSkillTreeProgress')) || [];
+
+    function saveProgress() {
+        localStorage.setItem('aiSkillTreeProgress', JSON.stringify(userProgress));
+        updateUI();
+    }
+
+    function resetProgress() {
+        if(confirm("确定要重置所有学习进度吗？")) {
+            userProgress = [];
+            saveProgress();
+        }
+    }
+
+    function toggleSkill(skillId) {
+        const skill = findSkill(skillId);
+        if (!isUnlocked(skill)) {
+            alert("请先完成前置技能：\n" + getParentTitles(skill.parents));
+            return;
+        }
+
+        const index = userProgress.indexOf(skillId);
+        if (index > -1) {
+            userProgress.splice(index, 1); 
+        } else {
+            userProgress.push(skillId); 
+        }
+        saveProgress();
+    }
+
+    function findSkill(id) {
+        for (let stage of stages) {
+            for (let skill of stage.skills) {
+                if (skill.id === id) return skill;
+            }
+        }
+        return null;
+    }
+
+    function isUnlocked(skill) {
+        if (skill.parents.length === 0) return true;
+        return skill.parents.every(pid => userProgress.includes(pid));
+    }
+
+    function getParentTitles(pids) {
+        return pids.map(pid => findSkill(pid).title).join(", ");
+    }
+
+    function highlightParents(skillId, active) {
+        const skill = findSkill(skillId);
+        if (!skill) return;
+        skill.parents.forEach(pid => {
+            const el = document.getElementById(`node-${pid}`);
+            if (el) {
+                if (active) el.classList.add('highlight-parent');
+                else el.classList.remove('highlight-parent');
+            }
+        });
+    }
+
+    function updateUI() {
+        const container = document.getElementById('treeRoot');
+        container.innerHTML = '';
+        
+        let totalSkills = 0;
+        let completedSkills = 0;
+
+        stages.forEach(stage => {
+            const stageDiv = document.createElement('div');
+            stageDiv.className = 'stage';
+            
+            const stageTotal = stage.skills.length;
+            const stageDone = stage.skills.filter(s => userProgress.includes(s.id)).length;
+            
+            stageDiv.innerHTML = `
+                <div class="stage-header">
+                    <div class="stage-title">${stage.name}</div>
+                    <div class="stage-count">${stageDone}/${stageTotal}</div>
+                    <div class="stage-desc">${stage.desc}</div>
+                </div>
+            `;
+            
+            const grid = document.createElement('div');
+            grid.className = 'node-grid';
+
+            stage.skills.forEach(skill => {
+                totalSkills++;
+                const isDone = userProgress.includes(skill.id);
+                if (isDone) completedSkills++;
+                
+                const unlocked = isUnlocked(skill);
+                
+                const node = document.createElement('div');
+                node.className = `node ${skill.type} ${isDone ? 'completed' : ''} ${unlocked ? 'unlocked' : 'locked'}`;
+                node.id = `node-${skill.id}`;
+                node.onclick = () => toggleSkill(skill.id);
+                node.onmouseenter = () => highlightParents(skill.id, true);
+                node.onmouseleave = () => highlightParents(skill.id, false);
+
+                let statusIcon = '';
+                if (isDone) statusIcon = '✓'; // 实心对勾
+                else if (!unlocked) statusIcon = '🔒';
+                
+                // 映射类别名称
+                let typeName = "";
+                if(skill.type === 'type-math') typeName = "数学";
+                if(skill.type === 'type-cs') typeName = "计算机科学";
+                if(skill.type === 'type-ai-base') typeName = "AI 基础";
+                if(skill.type === 'type-ai-core') typeName = "AI 核心";
+                if(skill.type === 'type-adv') typeName = "前沿应用";
+
+                node.innerHTML = `
+                    <span class="tag-text">${typeName}</span>
+                    <div class="node-header">
+                        <h3>${skill.title}</h3>
+                        <div class="status-icon">${statusIcon}</div>
+                    </div>
+                    <p>${skill.desc}</p>
+                    <div class="criteria-box">
+                        <strong>✅ 合格标准:</strong><br>${skill.criteria}
+                        ${skill.parents.length > 0 ? '<br><br><strong>🔗 前置需求:</strong> ' + getParentTitles(skill.parents) : ''}
+                    </div>
+                `;
+                grid.appendChild(node);
+            });
+
+            stageDiv.appendChild(grid);
+            container.appendChild(stageDiv);
+        });
+
+        const percent = Math.round((completedSkills / totalSkills) * 100);
+        document.getElementById('progressBar').style.width = percent + '%';
+        document.getElementById('progressText').textContent = percent + '%';
+    }
+
+    updateUI();
+
+</script>
+
+</body>
+</html>
