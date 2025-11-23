@@ -12,13 +12,13 @@ base_info:
   primary_color: "#0066cc"
 
   # Blog website title
-  title: Keep Theme
+  title: worldbuilder957
 
   # Blog website author name
-  author: Keep Team
+  author: worldbuilder957
 
   # Author avatar, You can use local image path or image link
-  avatar: /images/avatar.svg
+  avatar: /images/avatar.png
 
   # Website LOGO, You can use local image path or image link
   logo: /images/logo.svg
@@ -38,7 +38,7 @@ menu:
   archives: /archives           # || fa-solid fa-box-archive
   tags: /tags                   # || fa-solid fa-tags
   # categories: /categories     # || fa-solid fa-layer-group
-  # links: /links               # || fa-solid fa-link
+  links: /links                 # || fa-solid fa-link
   # photos: /photos             # || fa-solid fa-image
   # tools: /tools               # || fa-solid fa-tools
   about: /about                 # || fa-solid fa-user-graduate
@@ -59,7 +59,7 @@ first_screen:
 
   # First screen description
   # You can use the "||" to begin a newline, maximum is two lines.
-  description: Keep writing and Keep loving.
+  description: Amor Fati.
 
   # If enable hitokoto, first screen description is different every time when you enter the website
   hitokoto: false      # Option values: true | false
@@ -136,8 +136,8 @@ post:
   # Depend on Hexo Plugin: hexo-wordcount (`npm install hexo-wordcount`)
   # See: https://github.com/willin/hexo-wordcount
   word_count:
-    wordcount: false     # Word count, one post. Option values: true | false
-    min2read: false      # Time to read, one post. Option values: true | false
+    wordcount: true      # Word count, one post. Option values: true | false
+    min2read: true       # Time to read, one post. Option values: true | false
 
   # Post datetime
   datetime_format: "YYYY-MM-DD HH:mm:ss"  # Datetime format. e.g. "YYYY-MM-DD HH:mm:ss"
