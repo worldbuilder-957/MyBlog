@@ -21,10 +21,10 @@ base_info:
   avatar: /images/avatar.png
 
   # Website LOGO, You can use local image path or image link
-  logo: /images/logo.svg
+  logo: /images/avatar.svg
 
   # Website favicon, You can use local image path or image link
-  favicon: /images/logo.svg
+  favicon: /images/avatar.svg
 
 
 # ---------------------------------------------------------------------------------------
