@@ -1,0 +1,402 @@
+---
+layout: false
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            /* 配色方案：极简黑白灰 (Keep风格) */
+            --bg-color: #f5f5f7;
+            --card-bg: #ffffff;
+            --text-main: #1d1d1f;
+            --text-sub: #86868b;
+            --accent: #0071e3; /* 克莱因蓝强调色 */
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+            --radius: 24px;
+        }
+
+        /* 黑暗模式自动适配 (可选) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                --card-bg: #1c1c1e;
+                --text-main: #f5f5f7;
+                --text-sub: #86868b;
+            }
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Bento Grid 布局核心 */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 分为4列 */
+            grid-template-rows: repeat(3, auto);   /* 自动行高 */
+            gap: 20px;
+        }
+
+        /* 通用卡片样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* ----- 各个模块的具体布局 ----- */
+
+        /* 1. 搜索栏 (占据第一行，跨4列) */
+        .search-box {
+            grid-column: span 4;      /*位置定义*/
+            display: flex !important; /* 强制使用 flex 布局 */
+            flex-direction: row;  /*强制水平排列*/
+            align-items: center; /*关键：确保垂直居中*/
+            background: var(--card-bg);
+            border-radius: 50px; /* 圆角更大 */
+            height: 64px;  /*给出一个固定高度*/
+            padding: 0 24px;  /*去掉上下内边距，只留左右*/
+        }
+        .search-box i { 
+            font-size: 1.4rem; 
+            color: var(--text-sub); 
+            margin-right: 12px;
+            display: flex;       /* 让图标自身也是个容器，防止基线对齐问题 */
+            align-items: center;
+            height: 100%;        /* 撑满高度 */
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            font-size: 1.2rem;
+            width: 100%;
+            height: 100%;        /* 关键：让输入框高度撑满父容器 */
+            outline: none;
+            color: var(--text-main);
+            padding: 0;          /* 关键：强制去掉输入框默认的内边距 */
+            margin: 0;           /* 关键：强制去掉外边距 */
+            line-height: normal; /* 关键：重置行高 */
+        }
+
+        /* 2. 时钟卡片 (2x2 大方块) */
+        .card.time-card {
+            grid-column: span 2;
+            grid-row: span 2;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            /* 在这里填入你的图片链接，可以是本地的 /images/xxx.jpg 也可以是网图 */
+            background-image: url('/images/shanghai_loadmap.jpg');   /* 图片背景：后跟图片链接 */
+            background-size: cover;                                  /* 关键命令：cover (让图片等比例缩放填满盒子，像裁剪一样) */
+            background-position: center;                             /* 关键命令：center (永远显示图片的正中心) */
+    
+            /* 加上遮罩层，防止图片太花看不清字 (这是设计师的秘密) */
+            box-shadow: inset 0 0 0 2000px rgba(71, 79, 97, 0.609); 
+
+            color: rgb(255, 255, 255);
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+
+            background-color: transparent;   /* 保险措施，以防card背景干扰显示图片 */
+        }
+        .clock { font-size: 4rem; font-weight: 700; letter-spacing: -2px;}
+        .date { font-size: 1.2rem; color: var(--text-sub); margin-top: 10px;}
+
+        /* 3. 待办事项 (1x2 竖长条) */
+        .todo-card {
+            grid-column: span 1;
+            grid-row: span 2;
+        }
+        .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;}
+        .todo-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1;}
+        .todo-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05);}
+        .todo-item input { margin-right: 10px; }
+        .todo-input { width: 100%; padding: 10px; border: 1px solid var(--text-sub); border-radius: 8px; margin-top: 10px; background: transparent; color: var(--text-main);}
+
+        /* 4. 天气卡片 (1x1) */
+        .weather-card {
+            grid-column: span 1;
+            grid-row: span 1;
+    
+            display: flex;
+            justify-content: space-between; /* 左右分开 */
+            align-items: center;
+            padding: 24px; /* 恢复内边距 */
+    
+            /* 给个渐变背景，模拟天空 */
+            background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weather-info {
+            z-index: 2; /* 确保文字在上面 */
+        }
+
+        .temp {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .meta {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            display: flex;
+            gap: 5px;
+        }
+
+        /* 右侧巨大的装饰图标 */
+        .weather-icon {
+            font-size: 4rem;
+            opacity: 0.8;
+            transform: rotate(-10deg); /* 稍微歪一点，比较俏皮 */
+            text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* 5. 股票卡片 (1x1) */
+        .stock-card { grid-column: span 1; grid-row: span 1; }
+
+        /* 6. 快捷方式 (跨4列) */
+        .links-card {
+            grid-column: span 4;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            padding: 30px;
+        }
+        .link-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-main);
+            gap: 10px;
+            transition: opacity 0.2s;
+        }
+        .link-item:hover { opacity: 0.7; }
+        .link-icon {
+            width: 50px; height: 50px;
+            background: #f0f0f0;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+
+        /* 手机端适配 */
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; } /* 手机上一列展示 */
+            .search-box, .time-card, .todo-card, .weather-card, .stock-card, .links-card { grid-column: span 1; grid-row: auto; }
+            .links-card { flex-wrap: wrap; gap: 20px;}
+        }
+
+        /* 强制修正日期颜色 */
+        .card.time-card .date {
+        /* 1. 把颜色改成纯白 (带一点点透明度看起来更有质感) */
+        color: rgba(255, 255, 255, 0.9) !important;
+    
+        /* 2. 关键：给文字加黑描边/阴影 */
+        /* 既然背景是复杂的地图，必须加阴影，否则字压在白色道路上会看不见 */
+        text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    
+        /* 3. 稍微加粗一点点，更清晰 */
+        font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="card search-box">
+            <i class="ri-search-line"></i>
+            <input type="text" id="searchInput" placeholder="Search Google..." onkeypress="handleSearch(event)">
+        </div>
+
+        <div class="card time-card">
+            <div class="clock" id="clock">00:00</div>
+            <div class="date" id="date">Loading...</div>
+        </div>
+
+        <div class="card todo-card">
+            <div class="card-title"><i class="ri-list-check"></i> 今日待办</div>
+            <ul class="todo-list" id="todoList">
+                </ul>
+            <input type="text" class="todo-input" placeholder="+ 新增任务 (回车)" onkeypress="addTodo(event)">
+        </div>
+
+        <div class="card weather-card">
+            <div class="weather-info">
+                <div class="temp" id="weather-temp">--°</div>
+                <div class="meta">
+                    <span class="city">ZhuHai</span>
+                    <span id="weather-text">Loading...</span>
+                </div>
+            </div>
+            <i class="ri-sun-cloudy-line weather-icon" id="weather-icon"></i>
+        </div>
+
+        <div class="card stock-card">
+            <div class="card-title"><i class="ri-stock-line"></i> 市场</div>
+             <div style="font-size: 0.8rem; color: var(--text-sub); margin-top:10px;">
+                (此处预留给股票组件)
+            </div>
+        </div>
+
+        <div class="card links-card">
+            <a href="https://github.com" class="link-item" target="_blank">
+                <div class="link-icon"><i class="ri-github-fill"></i></div>
+                <span>GitHub</span>
+            </a>
+            <a href="https://chatgpt.com" class="link-item" target="_blank">
+                <div class="link-icon"><i class="ri-openai-fill"></i></div>
+                <span>ChatGPT</span>
+            </a>
+            <a href="https://www.bilibili.com" class="link-item" target="_blank">
+                <div class="link-icon"><i class="ri-bilibili-fill"></i></div>
+                <span>Bilibili</span>
+            </a>
+            <a href="/" class="link-item">
+                <div class="link-icon"><i class="ri-article-line"></i></div>
+                <span>我的博客</span>
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. 时钟功能
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute:'2-digit',second:"2-digit"});
+            document.getElementById('date').innerText = now.toLocaleDateString('en-US', {weekday: 'long', month: 'long', day: 'numeric'});
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 2. 搜索功能 (回车跳转)
+        function handleSearch(e) {
+            if (e.key === 'Enter') {
+                const query = document.getElementById('searchInput').value;
+                window.location.href = `https://www.google.com/search?q=${query}`;
+            }
+        }
+
+        // 3. 待办事项 (使用 LocalStorage 保存)
+        const todoListEl = document.getElementById('todoList');
+        let todos = JSON.parse(localStorage.getItem('myTodos')) || ['完成博客搭建', '学习Hexo'];
+
+        function renderTodos() {
+            todoListEl.innerHTML = '';
+            todos.forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.className = 'todo-item';
+                li.innerHTML = `
+                    <input type="checkbox" onclick="removeTodo(${index})">
+                    <span>${todo}</span>
+                `;
+                todoListEl.appendChild(li);
+            });
+        }
+
+        function addTodo(e) {
+            if (e.key === 'Enter' && e.target.value.trim() !== '') {
+                todos.push(e.target.value);
+                localStorage.setItem('myTodos', JSON.stringify(todos));
+                e.target.value = '';
+                renderTodos();
+            }
+        }
+
+        function removeTodo(index) {
+            setTimeout(() => { // 延迟一点让用户看到勾选动画
+                todos.splice(index, 1);
+                localStorage.setItem('myTodos', JSON.stringify(todos));
+                renderTodos();
+            }, 300);
+        }
+
+        renderTodos();
+
+        // 4. 天气功能 (API版)
+        async function fetchWeather() {
+            const apiKey = '4dce09f66f4c46c1a5d5f631f019290e'; // 这里填和风天气 Key
+            const locationID = '101280701'; // 珠海的ID
+            
+            // API地址 (注意：免费用户必须用 devapi，不要用 api)
+            const url = `https://m963ywf52k.re.qweatherapi.com/v7/weather/now?location=${locationID}&key=${apiKey}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.code === '200') {
+                    const now = data.now;
+                    
+                    // 1. 更新温度
+                    document.getElementById('weather-temp').innerText = now.temp + '°';
+                    
+                    // 2. 更新文字 (比如 "晴"、"多云")
+                    document.getElementById('weather-text').innerText = now.text;
+
+                    // 3. 更新图标 (简单的映射逻辑)
+                    // 你可以根据 needs 扩充这个列表
+                    const iconEl = document.getElementById('weather-icon');
+                    const text = now.text;
+                    
+                    // 先移除旧图标类名，保留基础类名
+                    iconEl.className = 'weather-icon'; 
+                    
+                    if (text.includes('晴')) {
+                        iconEl.classList.add('ri-sun-line');
+                    } else if (text.includes('云') || text.includes('阴')) {
+                        iconEl.classList.add('ri-cloudy-line');
+                    } else if (text.includes('雨')) {
+                        iconEl.classList.add('ri-rainy-line');
+                    } else if (text.includes('雷')) {
+                        iconEl.classList.add('ri-thunderstorms-line');
+                    } else {
+                        iconEl.classList.add('ri-sun-cloudy-line'); // 默认图标
+                    }
+                } else {
+                    console.error('天气API报错:', data.code);
+                }
+            } catch (error) {
+                console.error('无法获取天气:', error);
+            }
+        }
+
+        // 页面加载后立即获取一次，之后每30分钟刷新一次
+        fetchWeather();
+        setInterval(fetchWeather, 30 * 60 * 1000);
+    </script>
+</body>
+</html>
