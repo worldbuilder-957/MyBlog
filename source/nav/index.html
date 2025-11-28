@@ -238,7 +238,7 @@ layout: false
         
         <div class="card search-box">
             <i class="ri-search-line"></i>
-            <input type="text" id="searchInput" placeholder="Search Google..." onkeypress="handleSearch(event)">
+            <input type="text" id="searchInput" placeholder="Search Google..." onkeypress="handleSearch(event)" autocomplete="off">
         </div>
 
         <div class="card time-card">
@@ -351,7 +351,7 @@ layout: false
             const apiKey = '4dce09f66f4c46c1a5d5f631f019290e'; // 这里填和风天气 Key
             const locationID = '101280701'; // 珠海的ID
             
-            // API地址 (注意：免费用户必须用 devapi，不要用 api)
+            // API地址
             const url = `https://m963ywf52k.re.qweatherapi.com/v7/weather/now?location=${locationID}&key=${apiKey}`;
 
             try {
