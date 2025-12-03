@@ -48,7 +48,7 @@ layout: false
             max-width: 1200px;
             display: grid;
             grid-template-columns: repeat(4, 1fr); /* 分为4列 */
-            grid-template-rows: repeat(3, auto);   /* 自动行高 */
+            grid-template-rows: repeat(4, auto);   /* 自动行高 */
             gap: 20px;
         }
 
@@ -124,6 +124,85 @@ layout: false
         }
         .clock { font-size: 4rem; font-weight: 700; letter-spacing: -2px;}
         .date { font-size: 1.2rem; color: var(--text-sub); margin-top: 10px;}
+
+        /* new add 3.状态胶囊的基础样式 */
+        /* 日历卡片样式 */
+        .calendar-card {
+            grid-column: span 1;
+            grid-row: span 1;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px !important;
+            background: var(--card-bg);
+            position: relative;
+            /* 给一个极其淡的红色背景，致敬传统日历 */
+            background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);
+        }
+
+        .cal-top {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        .cal-main {
+            font-size: 4.5rem; /* 超大的日期数字 */
+            font-weight: 700;
+            line-height: 1;
+            color: var(--text-main);
+            letter-spacing: -3px; /* 让数字紧凑一点更时尚 */
+            margin: 10px 0;
+        }
+
+        .cal-bottom {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .week-pill {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease; /* 颜色变化时有动画 */
+        }
+
+        /* 🔴 学期模式：红色，警示 Deadline */
+        .week-pill.term {
+            background: #ff4d4f;
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 77, 79, 0.3);
+        }
+
+        /* 🟢 假期模式：青色，放松心情 */
+        .week-pill.vacation {
+            background: #13c2c2;
+            color: white;
+            box-shadow: 0 4px 10px rgba(19, 194, 194, 0.3);
+        }
+
+        /* ⚫ 未知/过期模式：灰色 */
+        .week-pill.gray {
+            background: #d9d9d9;
+            color: #666;
+        }
+
+        /* 黑暗模式适配 */
+        @media (prefers-color-scheme: dark) {
+            .calendar-card { background: linear-gradient(180deg, #1c1c1e 0%, #2c1c1c 100%); }
+            .week-badge.gray { background: #333; }
+        }
 
         /* 3. 待办事项 (1x2 竖长条) */
         .todo-card {
@@ -235,6 +314,22 @@ layout: false
 <body>
 
     <div class="container">
+
+        <div class="card calendar-card">
+            <div class="cal-top">
+                <span id="cal-month">Wait...</span>
+                <span class="week-badge gray" id="cal-year-week">全年 W--</span>
+            </div>
+            
+            <div class="cal-main" id="cal-day">--</div>
+            
+            <div class="cal-bottom">
+                <div class="week-pill term" id="week-pill-container">
+                    <i class="ri-school-line" id="period-icon"></i>
+                    <span id="cal-school-week">计算中...</span>
+                </div>
+            </div>
+        </div>
         
         <div class="card search-box">
             <i class="ri-search-line"></i>
@@ -397,6 +492,85 @@ layout: false
         // 页面加载后立即获取一次，之后每30分钟刷新一次
         fetchWeather();
         setInterval(fetchWeather, 30 * 60 * 1000);
+
+        // 6. 智能学期日历功能 (多时期版)
+        function updateCalendar() {
+            const now = new Date();
+            
+            // ================= 配置区域：请务必修改这里的日期 =================
+            // 逻辑：代码会从上往下找，看今天落在哪个区间里
+            // 技巧：前一个的 end 最好是后一个 start 的前一天，保证时间连续
+            const periods = [
+                { name: '夏季学期', start: '2025-02-24', end: '2025-07-06', type: 'term' }, 
+                { name: '暑假',     start: '2025-07-07', end: '2025-09-12', type: 'vacation' },
+                { name: '25Fall', start: '2025-09-13', end: '2026-01-25', type: 'term' },
+                { name: 'WinterHoliday',     start: '2026-01-26', end: '2026-03-01', type: 'vacation' }
+            ];
+            // ==============================================================
+
+            // 1. 基础日历显示
+            document.getElementById('cal-day').innerText = now.getDate();
+            const year = now.getFullYear();
+            const month = now.toLocaleDateString('en-US', { month: 'short' }); // 英文简写(11月)
+            document.getElementById('cal-month').innerText = `${year} ${month}`;
+
+            // 2. 宏观系统：计算全年第几周 (ISO标准)
+            const startOfYear = new Date(year, 0, 1);
+            const pastDaysOfYear = (now - startOfYear) / 86400000;
+            const weekOfYear = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+            document.getElementById('cal-year-week').innerText = `全年 W${weekOfYear}`;
+
+            // 3. 微观系统：计算当前时期周数 (核心逻辑)
+            let currentPeriod = null;
+            let periodWeek = 0;
+
+            // 遍历上面的清单，找今天在哪
+            for (let period of periods) {
+                const sDate = new Date(period.start);
+                const eDate = new Date(period.end);
+                // 把时间都归零，只比日期，防止有时差bug
+                sDate.setHours(0,0,0,0);
+                eDate.setHours(23,59,59,999);
+                now.setHours(0,0,0,0);
+
+                if (now >= sDate && now <= eDate) {
+                    currentPeriod = period;
+                    // 计算是该时期的第几天
+                    const diffTime = Math.abs(now - sDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1是因为第一天算第1天
+                    // 计算是第几周
+                    periodWeek = Math.ceil(diffDays / 7);
+                    break; // 找到了就停止寻找
+                }
+            }
+
+            // 4. 更新界面显示
+            const pillEl = document.getElementById('week-pill-container');
+            const iconEl = document.getElementById('period-icon');
+            const textEl = document.getElementById('cal-school-week');
+
+            if (currentPeriod) {
+                // 显示文本：例如 "秋季学期 Week 12"
+                textEl.innerText = `${currentPeriod.name} W${periodWeek}`;
+                
+                // 视觉区分：如果是假期，换个颜色和图标
+                if (currentPeriod.type === 'vacation') {
+                    pillEl.className = 'week-pill vacation'; // 变成绿色/蓝色
+                    iconEl.className = 'ri-cup-line';        // 咖啡图标
+                } else {
+                    pillEl.className = 'week-pill term';     // 保持红色
+                    iconEl.className = 'ri-school-line';     // 学校图标
+                }
+            } else {
+                // 如果今天不在任何区间内 (比如配置表过期了)
+                textEl.innerText = "日期未配置";
+                pillEl.className = 'week-pill gray';
+                iconEl.className = 'ri-error-warning-line';
+            }
+        }
+
+        updateCalendar();
+        setInterval(updateCalendar, 60 * 60 * 1000);
     </script>
 </body>
 </html>
