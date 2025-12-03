@@ -29,7 +29,7 @@ function updateCalendar() {
     const weekOfYear = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
     
     // 2.写入新ID：corner-year-week
-    document.getElementById('corner-year-week').innerText = `${Year} W${weekOfYear}`;
+    document.getElementById('corner-year-week').innerText = `${year} W${weekOfYear}`;
 
     // 3. 微观系统：计算当前时期周数 (核心逻辑)
     let currentPeriod = null;
