@@ -15,9 +15,9 @@ function updateCalendar() {
     // 逻辑：代码会从上往下找，看今天落在哪个区间里
     // 技巧：前一个的 end 最好是后一个 start 的前一天，保证时间连续
     const periods = [
-        { name: '25Spring', start: '2025-02-24', end: '2025-07-06', type: 'term' }, 
+        { name: 'Spring', start: '2025-02-24', end: '2025-07-06', type: 'term' }, 
         { name: 'SummerHoliday',     start: '2025-07-07', end: '2025-09-12', type: 'vacation' },
-        { name: '25Fall', start: '2025-09-13', end: '2026-01-25', type: 'term' },
+        { name: 'Fall', start: '2025-09-13', end: '2026-01-25', type: 'term' },
         { name: 'WinterHoliday',     start: '2026-01-26', end: '2026-03-01', type: 'vacation' }
     ];
     // ==============================================================
@@ -29,7 +29,7 @@ function updateCalendar() {
     const weekOfYear = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
     
     // 2.写入新ID：corner-year-week
-    document.getElementById('corner-year-week').innerText = `Year W${weekOfYear}`;
+    document.getElementById('corner-year-week').innerText = `${Year} W${weekOfYear}`;
 
     // 3. 微观系统：计算当前时期周数 (核心逻辑)
     let currentPeriod = null;
