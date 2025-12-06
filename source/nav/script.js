@@ -94,40 +94,114 @@ function handleSearch(e) {
     }
 }
 
-// 3. 待办事项 (使用 LocalStorage 保存)
+// 3. 超级待办事项 (Pro版)
 const todoListEl = document.getElementById('todoList');
-let todos = JSON.parse(localStorage.getItem('myTodos')) || ['完成博客搭建', '学习Hexo'];
+const modal = document.getElementById('taskModal');
 
-function renderTodos() {
+// 读取数据：如果没有旧数据，初始化一个包含元数据的示例
+let todos = JSON.parse(localStorage.getItem('myRichTodos')) || [
+    { id: 1, text: '完成指挥室搭建', date: '2025-12-31', loc: '宿舍', tags: ['Dev', '紧急'], done: false }
+];
+
+// --- A. 渲染核心 ---
+function renderTodos(filterText = '') {
     todoListEl.innerHTML = '';
-    todos.forEach((todo, index) => {
+    
+    // 过滤逻辑：搜索 标题 或 标签
+    const filtered = todos.filter(t => 
+        t.text.toLowerCase().includes(filterText.toLowerCase()) || 
+        t.tags.some(tag => tag.toLowerCase().includes(filterText.toLowerCase()))
+    );
+
+    filtered.forEach(todo => {
         const li = document.createElement('li');
         li.className = 'todo-item';
+        
+        // 生成标签 HTML
+        const tagsHtml = todo.tags.map(tag => 
+            `<span class="tag" data-name="${tag}">${tag}</span>`
+        ).join('');
+
+        // 生成日期和地点的 HTML (如果有的话)
+        let metaHtml = '';
+        if (todo.date || todo.loc) {
+            metaHtml = `<div class="todo-meta">`;
+            if (todo.date) metaHtml += `<span class="meta-tag"><i class="ri-calendar-line"></i> ${todo.date.slice(5)}</span>`; // 只显示月-日
+            if (todo.loc)  metaHtml += `<span class="meta-tag"><i class="ri-map-pin-line"></i> ${todo.loc}</span>`;
+            metaHtml += `</div>`;
+        }
+
         li.innerHTML = `
-            <input type="checkbox" onclick="removeTodo(${index})">
-            <span>${todo}</span>
+            <div class="todo-header">
+                <input type="checkbox" ${todo.done ? 'checked' : ''} onclick="toggleTodo(${todo.id})">
+                <span class="todo-text ${todo.done ? 'done' : ''}">${todo.text}</span>
+                <i class="ri-close-circle-line" style="color:var(--text-sub); cursor:pointer; margin-left:auto;" onclick="deleteTodo(${todo.id})"></i>
+            </div>
+            ${metaHtml}
+            <div class="tags-row">${tagsHtml}</div>
         `;
         todoListEl.appendChild(li);
     });
 }
 
-function addTodo(e) {
-    if (e.key === 'Enter' && e.target.value.trim() !== '') {
-        todos.push(e.target.value);
-        localStorage.setItem('myTodos', JSON.stringify(todos));
-        e.target.value = '';
-        renderTodos();
+// --- B. 数据操作 ---
+function addTask() {
+    const text = document.getElementById('taskInput').value;
+    const date = document.getElementById('taskDate').value;
+    const loc = document.getElementById('taskLoc').value;
+    const tagsStr = document.getElementById('taskTags').value;
+    
+    if (!text.trim()) return alert("任务内容不能为空！");
+
+    const newTodo = {
+        id: Date.now(), // 使用时间戳作为唯一ID
+        text: text,
+        date: date,
+        loc: loc,
+        tags: tagsStr.split(' ').filter(t => t), // 按空格分割标签
+        done: false
+    };
+
+    todos.unshift(newTodo); // 加到最前面
+    saveAndRender();
+    closeTaskModal();
+    
+    // 清空表单
+    document.getElementById('taskInput').value = '';
+    document.getElementById('taskTags').value = '';
+}
+
+function toggleTodo(id) {
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+        todo.done = !todo.done;
+        saveAndRender();
     }
 }
 
-function removeTodo(index) {
-    setTimeout(() => { // 延迟一点让用户看到勾选动画
-        todos.splice(index, 1);
-        localStorage.setItem('myTodos', JSON.stringify(todos));
-        renderTodos();
-    }, 300);
+function deleteTodo(id) {
+    if(confirm('确定删除吗？')) {
+        todos = todos.filter(t => t.id !== id);
+        saveAndRender();
+    }
 }
 
+function saveAndRender() {
+    localStorage.setItem('myRichTodos', JSON.stringify(todos));
+    renderTodos(document.getElementById('todoSearch').value);
+}
+
+// 搜索监听
+function filterTodos() {
+    const query = document.getElementById('todoSearch').value;
+    renderTodos(query);
+}
+
+// --- C. 弹窗控制 ---
+function openTaskModal() { modal.showModal(); }
+function closeTaskModal() { modal.close(); }
+
+// 初始化
 renderTodos();
 
 // 4. 天气功能 (API版)
