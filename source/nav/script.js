@@ -255,3 +255,11 @@ async function fetchWeather() {
 // 页面加载后立即获取一次，之后每30分钟刷新一次
 fetchWeather();
 setInterval(fetchWeather, 30 * 60 * 1000);
+
+// 在 worldbuilder957.com/nav/index.html 中
+if ('serviceWorker' in navigator) {
+  // 注意这里的 ./sw.js，表示加载当前目录下的脚本
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => console.log('子目录 PWA 注册成功', reg))
+    .catch(err => console.log('失败', err));
+}
