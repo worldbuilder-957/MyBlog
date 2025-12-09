@@ -97,7 +97,7 @@ function handleSearch(e) {
 }
 // #endregion =================================================================
 
-// 3. 超级待办事项 (Pro版)
+// #region 4. 超级待办事项 (Pro版)======================================================
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
 
@@ -206,10 +206,11 @@ function closeTaskModal() { modal.close(); }
 
 // 初始化
 renderTodos();
+// #endregion ================================================================= 
 
-// 4. 天气功能 (API版)
+// #region 5. 天气功能 (通过API接入和风天气)==============================================
 async function fetchWeather() {
-    const apiKey = '4dce09f66f4c46c1a5d5f631f019290e'; // 这里填和风天气 Key
+    const apiKey = '4dce09f66f4c46c1a5d5f631f019290e'; // 这里填和风天气的 apiKey
     const locationID = '101280701'; // 珠海的ID
     
     // API地址
@@ -266,3 +267,57 @@ if ('serviceWorker' in navigator) {
     .then(reg => console.log('子目录 PWA 注册成功', reg))
     .catch(err => console.log('失败', err));
 }
+// #endregion =================================================================
+
+// #region 6. PWA 安装提示===========================================================
+  let deferredPrompt; // 用来存浏览器的“安装票据”
+  const installBtn = document.getElementById('install-btn');
+
+  // 1. 监听浏览器的“可安装”事件
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // 阻止浏览器默认的（可能不会出现的）弹窗
+    e.preventDefault();
+    // 把事件存起来，等会儿用户点击按钮时再用
+    deferredPrompt = e;
+    // 🎉 重点：把我们的自定义按钮显示出来！
+    installBtn.style.display = 'block';
+    console.log('捕捉到安装事件，按钮已显示');
+
+  // === 新增：检测设备类型的“门卫” ===
+    // 检查 UserAgent 字符串里是否包含 "Mobile" 或 "Android" 等关键词
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // 只有当它是移动设备时，才显示按钮
+    if (isMobile) {
+        installBtn.style.display = 'block';
+        console.log('检测到移动设备，显示安装按钮');
+    } else {
+        console.log('检测到桌面端，隐藏安装按钮');
+    }
+    // ==================================
+  });
+
+  // 2. 监听按钮点击
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      // 拿出刚才存的票据，手动触发弹窗
+      deferredPrompt.prompt();
+      
+      // 等待用户选择（是安装还是取消）
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`用户选择结果: ${outcome}`);
+      
+      // 票据用完了，扔掉
+      deferredPrompt = null;
+      // 既然点过了，就把按钮再藏起来
+      installBtn.style.display = 'none';
+    }
+  });
+
+  // 3. (可选) 如果APP已经成功安装了，监听这个事件来隐藏按钮
+  window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+    deferredPrompt = null;
+    console.log('PWA 已安装');
+  });
+// #endregion ================================================================= 
