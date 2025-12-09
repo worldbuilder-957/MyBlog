@@ -1,4 +1,4 @@
-// 1. 时钟功能
+// #region 1. 时钟功能模块=======================================================
 function updateTime() {
     const now = new Date();
     document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute:'2-digit',second:"2-digit"});
@@ -6,8 +6,9 @@ function updateTime() {
 }
 setInterval(updateTime, 1000);
 updateTime();
+// #endregion =================================================================
 
-// 2. 日历功能 (多时期版)
+// #region 2. 日历功能模块 (多时期版)=======================================================
 function updateCalendar() {
     const now = new Date();
     
@@ -85,14 +86,16 @@ function updateCalendar() {
 
 updateCalendar();
 setInterval(updateCalendar, 60 * 60 * 1000);
+// #endregion =================================================================
 
-// 2. 搜索功能 (回车跳转)
+// #region 3. 搜索功能 (回车跳转)======================================================
 function handleSearch(e) {
     if (e.key === 'Enter') {
         const query = document.getElementById('searchInput').value;
         window.location.href = `https://www.google.com/search?q=${query}`;
     }
 }
+// #endregion =================================================================
 
 // 3. 超级待办事项 (Pro版)
 const todoListEl = document.getElementById('todoList');
