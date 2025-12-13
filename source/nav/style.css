@@ -333,7 +333,7 @@
         .btn.primary { background: var(--text-main); color: var(--card-bg); }
         .btn.secondary { background: transparent; color: var(--text-sub); }
 
-        /* ----- 顶部横幅背景 (Hero Banner) ----- */
+        /* ----- 顶部横幅背景 (Banner) ----- */
         .top-banner-bg {
             /* 1. 绝对定位：让它脱离文档流，浮在最上面 */
             position: fixed; /* 使用 fixed 可以让背景在滚动时固定不动，视觉效果更好 */
@@ -353,16 +353,13 @@
             transform: scale(1.05);
             background-repeat: no-repeat;
 
+            opacity: 0.9;           /* 0.9 的透明度，稍微淡化一点 */
+
             /* 3. 核心科技：渐变蒙版 (Magic Mask) */
             /* 原理：蒙版中黑色的部分可见，透明的部分不可见。*/
-            /* 下面的代码表示：从顶部开始到 60% 的位置是完全可见的，然后慢慢渐变到 100% 的位置完全透明。*/
-            -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-            mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-
-            opacity: 0.9;           /* 0.9 的透明度，稍微淡化一点 */
-            
-            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);
-            mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);
+            /* 下面的代码表示：从顶部开始到 70% 的位置是完全可见的，然后慢慢渐变到 100% 的位置完全透明。*/
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 100%);
         }
 
         /* 配合调整：为了让背景不被 body 的背景色遮挡 */
