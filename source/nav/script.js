@@ -17,9 +17,9 @@ function updateCalendar() {
     // 技巧：前一个的 end 最好是后一个 start 的前一天，保证时间连续
     const periods = [
         { name: 'Spring', start: '2025-02-24', end: '2025-07-06', type: 'term' }, 
-        { name: 'SummerHoliday',     start: '2025-07-07', end: '2025-09-12', type: 'vacation' },
-        { name: 'Fall', start: '2025-09-13', end: '2026-01-25', type: 'term' },
-        { name: 'WinterHoliday',     start: '2026-01-26', end: '2026-03-01', type: 'vacation' }
+        { name: 'SummerHoliday', start: '2025-07-07', end: '2025-09-14', type: 'vacation' },
+        { name: 'Fall', start: '2025-09-15', end: '2026-01-25', type: 'term' },
+        { name: 'WinterHoliday', start: '2026-01-26', end: '2026-03-01', type: 'vacation' }
     ];
     // ==============================================================
     const year = now.getFullYear();
@@ -59,14 +59,20 @@ function updateCalendar() {
     // 4. 更新右下角：学期周数 
 
     for (let period of periods) {
-        const sDate = new Date(period.start);
-        const eDate = new Date(period.end);
-        sDate.setHours(0,0,0,0);
-        eDate.setHours(23,59,59,999);
-        now.setHours(0,0,0,0);
+        const sDate = new Date(period.start);    //获取开始日期
+        const eDate = new Date(period.end);      //获取结束日期
+        sDate.setHours(0,0,0,0);                 //将开始日期的时间部分归零
+        eDate.setHours(23,59,59,999);            //将结束日期的时间部分设为当天最后一刻
+        now.setHours(0,0,0,0);                   //将当前日期的时间部分归零
 
         if (now >= sDate && now <= eDate) {
             currentPeriod = period;
+
+            //将开学日期强制回推至那一周的周一
+            const day = sDate.getDay();
+            const dayAdjusted = day === 0 ? 7 : day;
+            sDate.setDate(sDate.getDate() - (dayAdjusted - 1));
+
             const diffTime = Math.abs(now - sDate);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
             periodWeek = Math.ceil(diffDays / 7);
