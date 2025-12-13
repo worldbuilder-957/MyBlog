@@ -98,9 +98,72 @@ layout: false
         </div>
 
         <div class="card stock-card">
-            <div class="card-title"><i class="ri-stock-line"></i> 市场</div>
-             <div style="font-size: 0.8rem; color: var(--text-sub); margin-top:10px;">
-                (此处预留给股票组件)
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+                {
+                "symbols": [
+                    [
+                    "上证指数",
+                    "SSE:000001|12M"
+                    ],
+                    [
+                    "深证成指",
+                    "SZSE:399001|12M"
+                    ],
+                    [
+                    "创业板指",
+                    "SZSE:399006|12M"
+                    ],
+                    [
+                    "道琼斯",
+                    "DJ:DJI|12M"
+                    ],
+                    [
+                    "纳斯达克",
+                    "NASDAQ:NDX|12M"
+                    ],
+                    [
+                    "标普500",
+                    "SP:SPX|12M"
+                    ]
+                ],
+                "chartOnly": false,
+                "width": "100%",
+                "height": "100%",
+                "locale": "zh_CN",
+                "colorTheme": "dark",
+                "autosize": true,
+                "showVolume": false,
+                "showMA": false,
+                "hideDateRanges": true,
+                "hideMarketStatus": true,
+                "hideSymbolLogo": true,
+                "scalePosition": "right",
+                "scaleMode": "Normal",
+                "fontFamily": "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+                "fontSize": "10",
+                "noTimeScale": false,
+                "valuesTracking": "1",
+                "changeMode": "price-and-percent",
+                "chartType": "area",
+                "maLineColor": "#2962FF",
+                "maLineWidth": 1,
+                "maLength": 9,
+                "lineWidth": 2,
+                "lineType": 0,
+                "dateRanges": [
+                    "12M"
+                ],
+                "upColor": "#22ab94",
+                "downColor": "#f7525f",
+                "borderUpColor": "#22ab94",
+                "borderDownColor": "#f7525f",
+                "wickUpColor": "#22ab94",
+                "wickDownColor": "#f7525f",
+                "backgroundColor": "rgba(19, 23, 34, 0)" 
+                }
+                </script>
             </div>
         </div>
 
