@@ -341,7 +341,7 @@
 
             /* 2. 设置背景图片 */
             /* ⚠️ 请把这里的路径换成你自己的图片路径 */
-            background-image: url('banner.jpg'); 
+            background-image: url('banner.webp'); 
             background-size: cover;      /* 确保图片撑满整个区域，不变形 */
             background-position: center top; /* 图片对齐方式：居中且靠上 */
             background-repeat: no-repeat;
