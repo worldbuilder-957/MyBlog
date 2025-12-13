@@ -349,7 +349,7 @@
             background-image: url('banner.webp'); 
             background-size: cover;      /* 确保图片撑满整个区域，不变形 */
             background-position: center top; /* 图片对齐方式：居中且靠上 */
-            filter: saturate(120%) brightness(0.9);
+            filter: saturate(150%) contrast(110%) brightness(1.0);
             transform: scale(1.05);
             background-repeat: no-repeat;
 
