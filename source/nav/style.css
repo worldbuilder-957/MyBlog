@@ -357,9 +357,9 @@
 
             /* 3. 核心科技：渐变蒙版 (Magic Mask) */
             /* 原理：蒙版中黑色的部分可见，透明的部分不可见。*/
-            /* 下面的代码表示：从顶部开始到 70% 的位置是完全可见的，然后慢慢渐变到 100% 的位置完全透明。*/
-            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 100%);
-            mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 100%);
+            /* 下面的代码表示：从顶部开始到 85% 的位置是完全可见的，然后慢慢渐变到 100% 的位置完全透明。*/
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 100%);
         }
 
         /* 配合调整：为了让背景不被 body 的背景色遮挡 */
