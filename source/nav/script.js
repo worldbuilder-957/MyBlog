@@ -335,10 +335,10 @@ function changeStock(code, btnElement) {
     // 1. 确定图片源 URL
     let url = '';
     if (code.startsWith('usr_')) {
-        // 美股接口：http://image.sinajs.cn/newchart/us/min/代码.gif
+        // 美股接口：https://image.sinajs.cn/newchart/us/min/代码.gif
         url = `http://image.sinajs.cn/newchart/us/min/${code.replace('usr_', '')}.gif`;
     } else {
-        // A股接口：http://image.sinajs.cn/newchart/min/n/代码.gif
+        // A股接口：https://image.sinajs.cn/newchart/min/n/代码.gif
         url = `http://image.sinajs.cn/newchart/min/n/${code}.gif`;
     }
     
