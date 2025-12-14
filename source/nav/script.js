@@ -336,10 +336,10 @@ function changeStock(code, btnElement) {
     let url = '';
     if (code.startsWith('usr_')) {
         // 美股接口：https://image.sinajs.cn/newchart/us/min/代码.gif
-        url = `http://image.sinajs.cn/newchart/us/min/${code.replace('usr_', '')}.gif`;
+        url = `https://image.sinajs.cn/newchart/us/min/${code.replace('usr_', '')}.gif`;
     } else {
         // A股接口：https://image.sinajs.cn/newchart/min/n/代码.gif
-        url = `http://image.sinajs.cn/newchart/min/n/${code}.gif`;
+        url = `https://image.sinajs.cn/newchart/min/n/${code}.gif`;
     }
     
     // 2. 切换图片 (加个时间戳防止浏览器缓存旧图)
