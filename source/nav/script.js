@@ -327,3 +327,70 @@ if ('serviceWorker' in navigator) {
     console.log('PWA 已安装');
   });
 // #endregion ================================================================= 
+
+// #region 7. 股票模块 (TradingView) =========================
+function initStockWidget() {
+    // 1. 找到 HTML 里的容器
+    const container = document.getElementById('tv-widget-container');
+    if (!container) return; // 如果找不到容器就不执行，防止报错
+
+    // 2. 定义配置对象 (把之前的 JSON 搬到这里，变成了 JS 对象)
+    const config = {
+        "symbols": [
+            ["上证指数", "SSE:000001|12M"],
+            ["深证成指", "SZSE:399001|12M"],
+            ["创业板指", "SZSE:399006|12M"],
+            ["道琼斯", "DJ:DJI|12M"],
+            ["纳斯达克", "NASDAQ:NDX|12M"],
+            ["标普500", "SP:SPX|12M"]
+        ],
+        "chartOnly": false,
+        "width": "100%",
+        "height": "100%",
+        "locale": "zh_CN",
+        "colorTheme": "dark",
+        "autosize": true,
+        "showVolume": false,
+        "showMA": false,
+        "hideDateRanges": true,
+        "hideMarketStatus": true,
+        "hideSymbolLogo": true,
+        "scalePosition": "right",
+        "scaleMode": "Normal",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+        "fontSize": "10",
+        "noTimeScale": false,
+        "valuesTracking": "1",
+        "changeMode": "price-and-percent",
+        "chartType": "area",
+        "maLineColor": "#2962FF",
+        "maLineWidth": 1,
+        "maLength": 9,
+        "lineWidth": 2,
+        "lineType": 0,
+        "dateRanges": ["12M"],
+        "upColor": "#22ab94",
+        "downColor": "#f7525f",
+        "borderUpColor": "#22ab94",
+        "borderDownColor": "#f7525f",
+        "wickUpColor": "#22ab94",
+        "wickDownColor": "#f7525f",
+        "backgroundColor": "rgba(19, 23, 34, 0)"
+    };
+
+    // 3. 动态创建 script 标签
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+    
+    // 关键一步：把上面的配置对象转回 JSON 字符串，塞进 script 标签里
+    script.innerHTML = JSON.stringify(config);
+
+    // 4. 把这个做好的 script 标签插入到 HTML 容器里
+    container.appendChild(script);
+}
+
+// 启动股票组件
+initStockWidget();
+// #endregion =================================
