@@ -203,48 +203,69 @@
             text-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         
-        /* 5. 股票卡片  */
-        /* #region --- 股票卡片样式 --- */
+        /* #region --- 股票卡片 (新浪版) --- */
         .stock-card {
-            /* 1. 关键修改：让它变宽，占据 2 列 */
-            grid-column: span 2; 
-            
-            /* 2. 高度控制：给它一个固定高度，保证图表能展开 */
-            /* 建议设置在 300px - 360px 之间，太矮了列表会显示不全 */
-            height: 500px; 
-            
-            /* 3. 清除内边距：因为组件自带边距，我们要利用每一寸空间 */
-            padding: 0 !important; 
-            
-            /* 4. 确保背景透明，不遮挡星空 */
-            background: rgba(255, 255, 255, 0.05); /* 微微一点点白，增加层次感 */
-            backdrop-filter: blur(10px); /* 毛玻璃特效 */
+            grid-column: span 2;
+            height: 360px !important; /* 不需要太高了，图片没那么大 */
+            padding: 0 !important;
+            display: flex; flex-direction: column;
+            background: rgba(30, 41, 59, 0.6); /* 半透明深色底 */
             border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        /* 1. 顶部按钮栏 */
+        .stock-tabs {
+            display: flex;
+            overflow-x: auto; /* 按钮多了可以横向滚动 */
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stock-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-sub);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap; /* 防止换行 */
+            transition: all 0.2s;
+        }
+
+        .stock-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        /* 选中状态 */
+        .stock-btn.active {
+            background: #007aff; 
+            border-color: #007aff; 
+            color: #fff;
+        }
+
+        /* 2. 图片区域 */
+        .stock-display {
+            flex: 1;
+            display: flex; justify-content: center; align-items: center;
+            padding: 10px;
+            background: transparent;
+        }
+
+        .stock-display img {
+            width: 95%;
+            max-width: 550px; /* 限制最大宽度，防止模糊 */
+            height: auto;
+            border-radius: 8px;
             
-            overflow: hidden; /* 防止组件溢出 */
-        }
-
-        /* 强制 TradingView 的容器占满整个卡片 */
-        .stock-card .tradingview-widget-container {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        /* 强制内部的 iframe (图表本体) 也占满 */
-        .stock-card iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        /* 手机端适配：手机上还是占满整行 */
-        @media (max-width: 768px) {
-            .stock-card {
-                grid-column: span 1;
-                height: 400px; /* 手机上稍微高一点，方便手指点击 */
-            }
+            /* ✨ 核心魔法：反色滤镜 */
+            /* invert(1): 把白底变黑底 */
+            /* hue-rotate(180deg): 修正因为反色导致的红绿颠倒 */
+            /* contrast(0.9): 降低一点对比度，让黑色不那么死黑 */
+            filter: invert(1) hue-rotate(180deg) contrast(0.9);
+            
+            opacity: 0.9; /* 稍微透明一点，透出星空 */
         }
         /* #endregion */
 

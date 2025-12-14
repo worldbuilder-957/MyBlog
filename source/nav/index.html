@@ -98,8 +98,17 @@ layout: false
         </div>
 
         <div class="card stock-card">
-            <div class="tradingview-widget-container" id="tv-widget-container">
-                <div class="tradingview-widget-container__widget"></div>
+            <div class="stock-tabs">
+                <button class="stock-btn active" onclick="changeStock('sh000001', this)">上证</button>
+                <button class="stock-btn" onclick="changeStock('sz399001', this)">深证</button>
+                <button class="stock-btn" onclick="changeStock('sz399006', this)">创业板</button>
+                <button class="stock-btn" onclick="changeStock('usr_dji', this)">Dow Jones</button>
+                <button class="stock-btn" onclick="changeStock('usr_ixic', this)">Nasdaq</button>
+                <button class="stock-btn" onclick="changeStock('usr_inx', this)">S&P 500</button>
+            </div>
+
+            <div class="stock-display">
+                <img id="stock-image" src="http://image.sinajs.cn/newchart/min/n/sh000001.gif" alt="Stock Chart">
             </div>
         </div>
 

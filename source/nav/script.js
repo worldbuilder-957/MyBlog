@@ -328,69 +328,35 @@ if ('serviceWorker' in navigator) {
   });
 // #endregion ================================================================= 
 
-// #region 7. 股票模块 (TradingView) =========================
-function initStockWidget() {
-    // 1. 找到 HTML 里的容器
-    const container = document.getElementById('tv-widget-container');
-    if (!container) return; // 如果找不到容器就不执行，防止报错
-
-    // 2. 定义配置对象 (把之前的 JSON 搬到这里，变成了 JS 对象)
-    const config = {
-        "symbols": [
-            ["上证指数", "SSE:000001|12M"],
-            ["深证成指", "SZSE:399001|12M"],
-            ["创业板指", "SZSE:399006|12M"],
-            ["道琼斯", "DJ:DJI|12M"],
-            ["纳斯达克", "NASDAQ:NDX|12M"],
-            ["标普500", "SP:SPX|12M"]
-        ],
-        "chartOnly": false,
-        "width": "100%",
-        "height": "500",
-        "locale": "zh_CN",
-        "colorTheme": "dark",
-        "autosize": false,
-        "showVolume": false,
-        "showMA": false,
-        "hideDateRanges": true,
-        "hideMarketStatus": true,
-        "hideSymbolLogo": true,
-        "scalePosition": "right",
-        "scaleMode": "Normal",
-        "fontFamily": "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
-        "fontSize": "10",
-        "noTimeScale": false,
-        "valuesTracking": "1",
-        "changeMode": "price-and-percent",
-        "chartType": "area",
-        "maLineColor": "#2962FF",
-        "maLineWidth": 1,
-        "maLength": 9,
-        "lineWidth": 2,
-        "lineType": 0,
-        "dateRanges": ["12M"],
-        "upColor": "#22ab94",
-        "downColor": "#f7525f",
-        "borderUpColor": "#22ab94",
-        "borderDownColor": "#f7525f",
-        "wickUpColor": "#22ab94",
-        "wickDownColor": "#f7525f",
-        "backgroundColor": "rgba(19, 23, 34, 0)"
-    };
-
-    // 3. 动态创建 script 标签
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.async = true;
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
+// #region 7. 股票模块 (新浪静态图版) =========================
+function changeStock(code, btnElement) {
+    const img = document.getElementById('stock-image');
     
-    // 关键一步：把上面的配置对象转回 JSON 字符串，塞进 script 标签里
-    script.innerHTML = JSON.stringify(config);
+    // 1. 确定图片源 URL
+    let url = '';
+    if (code.startsWith('usr_')) {
+        // 美股接口：http://image.sinajs.cn/newchart/us/min/代码.gif
+        url = `http://image.sinajs.cn/newchart/us/min/${code.replace('usr_', '')}.gif`;
+    } else {
+        // A股接口：http://image.sinajs.cn/newchart/min/n/代码.gif
+        url = `http://image.sinajs.cn/newchart/min/n/${code}.gif`;
+    }
+    
+    // 2. 切换图片 (加个时间戳防止浏览器缓存旧图)
+    img.src = `${url}?t=${new Date().getTime()}`;
 
-    // 4. 把这个做好的 script 标签插入到 HTML 容器里
-    container.appendChild(script);
+    // 3. 切换按钮样式 (高亮当前点击的)
+    // 先移除所有按钮的 active 类
+    const buttons = document.querySelectorAll('.stock-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+    // 给当前按钮加上 active 类
+    btnElement.classList.add('active');
 }
 
-// 启动股票组件
-initStockWidget();
+// (可选) 自动刷新：每分钟刷新一次图片
+setInterval(() => {
+    const activeBtn = document.querySelector('.stock-btn.active');
+    if(activeBtn) activeBtn.click(); // 模拟点击当前按钮来刷新
+}, 60000);
+
 // #endregion =================================
