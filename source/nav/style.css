@@ -232,6 +232,10 @@
 
         /* 强制内部的 iframe (图表本体) 也占满 */
         .stock-card iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
             height: 100% !important;
         }
 
