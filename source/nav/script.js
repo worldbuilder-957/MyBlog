@@ -359,4 +359,41 @@ setInterval(() => {
     if(activeBtn) activeBtn.click(); // 模拟点击当前按钮来刷新
 }, 60000);
 
+// #endregion ==================================
+
+// #region 6. 快捷链接模块 (Wetab风格) =========================
+
+// 1. 定义应用数据 (你想加什么就在这里写，不用动 HTML)
+const apps = [
+    { name: "Bilibili", url: "https://www.bilibili.com", icon: "ri-bilibili-line", color: "#fb7299" },
+    { name: "GitHub", url: "https://github.com", icon: "ri-github-fill", color: "#fff" },
+    { name: "ChatGPT", url: "https://chat.openai.com", icon: "ri-openai-fill", color: "#10a37f" },
+    { name: "YouTube", url: "https://www.youtube.com", icon: "ri-youtube-fill", color: "#ff0000" },
+    { name: "邮箱",     url: "https://mail.google.com", icon: "ri-mail-line",    color: "#4285f4" },
+    { name: "知乎",     url: "https://www.zhihu.com",   icon: "ri-zhihu-line",   color: "#0084ff" },
+    // 你可以无限复制上面这一行来添加新图标...
+];
+
+// 2. 渲染函数：把数据变成 HTML
+function renderApps() {
+    const container = document.getElementById('app-grid');
+    if (!container) return; // 安全检查
+
+    // 使用 map 方法遍历数组，生成一串 HTML 字符串
+    const html = apps.map(app => `
+        <a href="${app.url}" target="_blank" class="app-item">
+            <div class="app-icon" style="color: ${app.color};">
+                <i class="${app.icon}"></i>
+            </div>
+            <span class="app-name">${app.name}</span>
+        </a>
+    `).join('');
+
+    // 一次性插入到页面中
+    container.innerHTML = html;
+}
+
+// 3. 启动渲染
+renderApps();
+
 // #endregion =================================
