@@ -450,3 +450,66 @@
                 background: rgba(0,0,0,0.4); /* 盖一层半透明黑色 */
             }
         }
+
+        /* #region --- Wetab 风格应用网格 --- */
+        .links-card {
+            /* 让卡片稍微高一点，容纳更多图标 */
+            grid-column: span 1; /* 或者 span 2 看你喜好 */
+            min-height: 200px;
+            display: flex; flex-direction: column;
+        }
+
+        /* 网格容器：自动排列，一行排不下就换行 */
+        .app-grid {
+            display: grid;
+            /* 魔法代码：每列最小 70px，自动填充列数 */
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 15px; /* 图标之间的间距 */
+            padding-top: 15px;
+            overflow-y: auto; /* 图标太多时可以滚动 */
+        }
+
+        /* 单个应用项 */
+        .app-item {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-decoration: none;
+            gap: 8px; /* 图标和文字的距离 */
+            transition: transform 0.2s;
+        }
+
+        .app-item:hover {
+            transform: translateY(-5px); /* 悬停时微微上浮 */
+        }
+
+        /* 图标容器 */
+        .app-icon {
+            width: 48px; height: 48px;
+            background: rgba(255, 255, 255, 0.05); /* 淡淡的背景 */
+            border-radius: 12px; /* 圆角矩形 */
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; /* 图标大小 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+
+        .app-item:hover .app-icon {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 应用名称 */
+        .app-name {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .app-item:hover .app-name {
+            color: var(--text-main);
+        }
+        /* #endregion */
