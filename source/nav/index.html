@@ -14,13 +14,16 @@ layout: false
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link rel="stylesheet" href="/nav/style.css">
     <link rel="preload" as="image" href="/images/shanghai_loadmap.jpg">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 </head>
 
 <body>
     <button id="install-btn" style="display: none; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; margin: 10px;">
         Install App
     </button>
-    <div class="top-banner-bg"></div>
+    <div class="top-banner-bg">
+
+    </div>
 
     <div class="container">
         <div class="card search-box">
@@ -120,7 +123,44 @@ layout: false
             <div class="app-grid" id="app-grid"></div>
         </div>
 
+        <div class="card calendar-entry" onclick="openCalendarView()">
+            <div class="cal-icon-wrapper">
+                <i class="ri-calendar-todo-fill"></i>
+            </div>
+
+            <div class="cal-info">
+                <span class="cal-title">日程与计划</span>
+                <span class="cal-desc">点击进入全屏管理</span>
+            </div>
+            
+            <div class="cal-arrow">
+                <i class="ri-arrow-right-s-line"></i>
+            </div>
+        </div>
     </div>
+
+    
+    <dialog id="calendarModal" class="full-screen-modal">
+        <div class="calendar-layout">
+            <div class="sidebar">
+                <h3><i class="ri-list-check"></i> 待排期任务</h3>
+                <div id="external-events">
+                    </div>
+            </div>
+
+            <div class="main">
+                <div class="toolbar">
+                    <button onclick="closeCalendar()" class="btn-close">
+                        <i class="ri-arrow-left-line"></i> 返回
+                    </button>
+                </div>
+                
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </dialog>
+
     <script src="/nav/script.js"></script>
+
 </body>
 </html>

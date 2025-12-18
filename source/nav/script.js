@@ -397,3 +397,134 @@ function renderApps() {
 renderApps();
 
 // #endregion =================================
+
+// #region 7. 飞书级日历系统逻辑 =========================
+
+let calendarInstance = null; // 保存日历实例
+
+// 🚀 核心启动函数
+function initCalendarSystem() {
+    const calendarEl = document.getElementById('calendar');
+    const containerEl = document.getElementById('external-events');
+    
+    // 1. 初始化左侧“可拖拽区域”
+    new FullCalendar.Draggable(containerEl, {
+        itemSelector: '.draggable-item',
+        eventData: function(eventEl) {
+            return {
+                title: eventEl.innerText,
+                id: eventEl.getAttribute('data-id'),
+                backgroundColor: '#3788d8' // 拖进去后的默认颜色
+            };
+        }
+    });
+
+    // 2. 初始化右侧“日历”
+    calendarInstance = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek', // 周视图 (飞书经典)
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        locale: 'zh-cn',
+        firstDay: 1, // 周一开头
+        height: '100%',
+        editable: true,     // 允许在日历里拖动
+        droppable: true,    // ✨ 允许从外部拖进去！
+        
+        // 📥 核心：当外部任务被扔进日历时
+        drop: function(info) {
+            // 拿到任务ID和新日期
+            const todoId = info.draggedEl.getAttribute('data-id');
+            const newDate = info.dateStr; // 格式: 2025-12-18T14:30:00+08:00
+            
+            // 更新数据库
+            updateTodoDate(todoId, newDate);
+            
+            // 视觉上移除左侧那个项目 (因为它已经进日历了)
+            info.draggedEl.remove();
+        },
+
+        // 📅 核心：当在日历里移动任务时
+        eventDrop: function(info) {
+            updateTodoDate(info.event.id, info.event.startStr);
+        },
+        
+        // 🔄 核心：拉伸任务改变时长时
+        eventResize: function(info) {
+             // 暂时我们只存开始时间，如果需要存时长，逻辑类似
+             console.log("任务时长变了");
+        }
+    });
+
+    calendarInstance.render();
+    
+    // 3. 加载数据
+    refreshCalendarData();
+}
+
+// 🔄 数据刷新函数：从 LocalStorage 读取并分发
+function refreshCalendarData() {
+    const todos = JSON.parse(localStorage.getItem('myRichTodos')) || [];
+    const containerEl = document.getElementById('external-events');
+    
+    // 清空旧数据
+    containerEl.innerHTML = '';
+    calendarInstance.removeAllEvents();
+
+    todos.forEach(todo => {
+        if (todo.date) {
+            // ✅ 有日期的 -> 加到日历里
+            calendarInstance.addEvent({
+                id: todo.id,
+                title: todo.text,
+                start: todo.date,
+                color: todo.done ? '#666' : '#3788d8', // 完成变灰
+                allDay: todo.date.length <= 10 // 如果只有 '2025-12-18' 则是全天
+            });
+        } else {
+            // ❌ 没日期的 -> 加到左侧侧边栏
+            if (!todo.done) { // 只显示未完成的
+                const div = document.createElement('div');
+                div.className = 'draggable-item';
+                div.setAttribute('data-id', todo.id);
+                div.innerText = todo.text;
+                containerEl.appendChild(div);
+            }
+        }
+    });
+}
+
+// 💾 辅助：更新数据库日期
+function updateTodoDate(id, dateStr) {
+    let todos = JSON.parse(localStorage.getItem('myRichTodos')) || [];
+    const todo = todos.find(t => t.id == id);
+    if (todo) {
+        todo.date = dateStr; // 写入新日期
+        localStorage.setItem('myRichTodos', JSON.stringify(todos));
+        // 同时也刷新首页的Bento卡片
+        if(typeof renderTodos === 'function') renderTodos();
+    }
+}
+
+// 🚪 界面操作：打开/关闭
+function openCalendarView() {
+    const modal = document.getElementById('calendarModal');
+    modal.showModal(); // 显示弹窗
+    
+    // 延迟一丢丢渲染，防止尺寸计算错误
+    setTimeout(() => {
+        if (!calendarInstance) {
+            initCalendarSystem();
+        } else {
+            refreshCalendarData(); // 每次打开都重新读最新数据
+            calendarInstance.updateSize(); // 重新适应屏幕大小
+        }
+    }, 100);
+}
+
+function closeCalendar() {
+    document.getElementById('calendarModal').close();
+}
+// #endregion
