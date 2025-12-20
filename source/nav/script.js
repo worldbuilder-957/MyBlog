@@ -94,15 +94,6 @@ updateCalendar();
 setInterval(updateCalendar, 60 * 60 * 1000);
 // #endregion =================================================================
 
-// #region 3. 搜索功能 (回车跳转)======================================================
-function handleSearch(e) {
-    if (e.key === 'Enter') {
-        const query = document.getElementById('searchInput').value;
-        window.location.href = `https://www.google.com/search?q=${query}`;
-    }
-}
-// #endregion =================================================================
-
 // #region 4. 超级待办事项 (Pro版)======================================================
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
@@ -741,7 +732,7 @@ function formatDateForInput(date) {
 
 // #endregion
 
-// #region --- 10. 搜索引擎切换模块 ---
+// #region --- 10. 搜索引擎及搜索功能实现 ---
 
 // 1. 定义引擎配置
 const searchEngines = {
@@ -764,7 +755,7 @@ let currentEngine = 'google';
 
 // 2. 切换下拉菜单显示/隐藏
 function toggleEngineList(e) {
-    e.stopPropagation(); // 阻止冒泡，防止触发 document 的点击关闭
+    e.stopPropagation();              // 阻止冒泡，防止触发 document 的点击关闭
     const dropdown = document.getElementById('engine-dropdown');
     dropdown.classList.toggle('show');
 }
@@ -791,7 +782,7 @@ function handleSearch(e) {
         const query = document.getElementById('search-input').value;
         if (query.trim()) {
             const url = searchEngines[currentEngine].url + encodeURIComponent(query);
-            window.open(url, '_blank'); // 在新标签页打开
+            window.open(url, '_blank');                   // 在新标签页打开
         }
     }
 }
