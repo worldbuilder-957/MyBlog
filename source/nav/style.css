@@ -188,7 +188,8 @@ body {
     height: 64px;                       /*给出一个固定高度*/
     padding: 0 24px;
     position: relative;                 /* 关键：为了让下拉菜单相对于它定位 */
-    z-index: 100;                       /* 提高层级，防止被下面的卡片遮挡 */
+    overflow: visible !important;       /* 强制显示下拉菜单 */
+    z-index: 100 !important;            /* 提高层级，防止被下面的卡片遮挡 */
 }
 .search-box i { 
     font-size: 1.4rem; 
@@ -214,11 +215,14 @@ body {
 
 /*  引擎选择器按钮 */
 .engine-selector {
-    display: flex; align-items: center; justify-content: center;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
     width: 30px; height: 30px;
     cursor: pointer;
     color: var(--text-main);
     font-size: 1.2rem;
+    flex-shrink: 0;
     margin-right: 10px;
     border-radius: 6px;
     transition: background 0.2s;
