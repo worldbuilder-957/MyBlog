@@ -1,21 +1,21 @@
 :root {
-            /* 配色方案：极简黑白灰 (Keep风格) */
-            --bg-color: #040a26;
-            --card-bg: #ffffff;
-            --text-main: #1d1d1f;
-            --text-sub: #86868b;
-            --accent: #0071e3; /* 克莱因蓝强调色 */
-            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+            /* 配色方案：米白色浅主题 */
+            --bg-color: #f5f5f0;
+            --card-bg: rgba(255, 255, 253, 0.9);
+            --text-main: #333333;
+            --text-sub: #666666;
+            --accent: #8b8b83;
+            --shadow: 0 4px 20px rgba(0,0,0,0.15);
             --radius: 24px;
         }
 
-/* 黑暗模式适配 */
-@media (prefers-color-scheme: dark) {
+/* 浅色模式适配 */
+@media (prefers-color-scheme: light) {
     :root {
-        --bg-color: #000000;
-        --card-bg: #1c1c1e;
-        --text-main: #f5f5f7;
-        --text-sub: #86868b;
+        --bg-color: #f5f5f0;
+        --card-bg: rgba(255, 255, 253, 0.95);
+        --text-main: #333333;
+        --text-sub: #666666;
     }
 
     /* 顶部横幅背景遮罩 */
@@ -23,16 +23,106 @@
         content: '';
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.4); /* 盖一层半透明黑色 */
+        background: rgba(255,255,255,0.2); /* 盖一层半透明白色 */
     }
 }
 
-/* 手机端适配 */
+/* #region ====手机端适配==== */
 @media (max-width: 768px) {
-    .container { grid-template-columns: 1fr; margin-top: 15vh; } /* 手机上一列展示 */
-    .search-box, .time-card, .todo-card, .weather-card, .stock-card, .links-card { grid-column: span 1; grid-row: auto; }
-    .links-card { flex-wrap: wrap; gap: 20px;}
+    /* #region ===1. 布局重构：从“四列”变成“单列”=== */
+    .container {
+        /* 强制变成 1 列，所有卡片垂直堆叠 */
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto !important;
+        
+        /* 减小边距，手机寸土寸金 */
+        padding: 15px;
+        gap: 15px;
+        
+        /* 调整顶部留白：电脑上为了看背景留了 37.5vh，手机上不需要那么多 */
+        margin-top: 15vh !important; 
+    }
+
+    .links-card { 
+        display: flex;
+        flex-wrap: wrap; 
+        gap: 20px;
+        justify-content: center;
+    }
+
+
+    /* 2. 卡片重置：强制所有卡片占满一行 */
+    .card, 
+    .search-box,
+    .time-card,
+    .todo-card,
+    .weather-card,
+    .stock-card, 
+    .calendar-entry,
+    .links-card {
+        grid-column: span 1 !important; /* 强制占满横向宽度 */
+        grid-row: auto !important;      /* 强制垂直方向顺其自然，自动排列 */
+        width: 100% !important;
+    }
+
+    /* 3. 股票卡片特调 */
+    .stock-card {
+        /* 手机上不需要 500px 那么高，太占地了 */
+        height: 400px !important; 
+    }
+    /* 股票按钮栏变成可横向滑动 */
+    .stock-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px; /* 防止滚动条遮挡 */
+    }
+
+    /* 4. 全屏日历弹窗适配 */
+    .calendar-layout {
+        /* 电脑是左右结构，手机变成上下结构 */
+        flex-direction: column !important;
+    }
+
+    /* 侧边栏 (待办区) */
+    .sidebar {
+        width: 100% !important; /* 占满宽 */
+        height: 200px; /* 给个固定高度，剩下的给日历 */
+        border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding: 10px;
+    }
+    
+    /* 侧边栏标题变小 */
+    .sidebar h3 { font-size: 1rem; }
+    
+    /* 日历主区域 */
+    .main {
+        padding: 10px !important;
+    }
+    
+    /* FullCalendar 字体缩小 */
+    .fc { font-size: 0.85rem; }
+    
+    /* 5. 搜索框适配 */
+    .search-box {
+        height: 50px; /*稍微变小 */
+    }
+    .search-box input {
+        font-size: 1rem;
+    }
+
+    /* 6. 日程编辑弹窗适配 */
+    .event-modal {
+        width: 90% !important; /* 手机上弹窗占宽 90% */
+        max-height: 80vh; /* 防止太高超出屏幕 */
+        overflow-y: auto; /* 内容多了可以滚 */
+    }
+    .form-row {
+        flex-direction: column; /* 表单里的左右并排改成上下堆叠 */
+        gap: 10px;
+    }
 }
+/* #endregion=============== */
 
 body {
     background-color: var(--bg-color);
@@ -542,7 +632,7 @@ body {
 .full-screen-modal {
     position: fixed; top: 0; left: 0;
     width: 100vw; height: 100vh;
-    background: rgba(241, 235, 235, 0.9);       /* 浅色背景 */
+    background: rgba(51, 51, 51, 0.98);       /* 灰色背景，高透明度 */
     z-index: 9999;
     border: none; padding: 0; margin: 0;
     max-width: none; max-height: none;
@@ -569,8 +659,8 @@ body {
 /* 左侧：待办侧边栏 */
 .sidebar {
     width: 280px;
-    background: rgb(227, 227, 227);
-    border-right: 1px solid rgba(250, 248, 248, 0.8);
+    background: rgba(68, 68, 68, 0.8);
+    border-right: 1px solid rgba(128, 128, 128, 0.3);
     padding: 20px;
     display: flex; flex-direction: column; gap: 15px;
 }
@@ -591,17 +681,17 @@ body {
 .fc-event-main { color: inherit; }               /* 修复文字颜色 */
 .draggable-item {
     padding: 12px;
-    background: rgba(255, 255, 255, 0.458);
+    background: rgba(85, 85, 85, 0.8);
     border-radius: 8px;
     cursor: grab;
     font-size: 0.9rem;
     color: var(--text-main);
-    border-left: 3px solid #3788d8;            /* 蓝色左边条 */
+    border-left: 3px solid var(--accent);            /* 灰色左边条 */
     transition: all 0.2s;
 }
 
 .draggable-item:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(102, 102, 102, 0.9);
     transform: translateX(4px);
 }
 
@@ -610,30 +700,194 @@ body {
     flex: 1; padding: 20px;
     display: flex; flex-direction: column; gap: 15px;
     overflow: hidden;                                       /* 防止撑开 */
+    background: rgba(51, 51, 51, 0.8);                     /* 与主背景一致的灰色 */
 }
 
 /* 顶部工具栏 */
-.toolbar { display: flex; justify-content: flex-end; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; }
+
+.btn-add {
+    background: rgba(85, 85, 85, 0.8); border: none;
+    color: var(--text-main); padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-add:hover { background: rgba(102, 102, 102, 0.9); }
 
 .btn-close {
-    background: rgba(226, 226, 226, 0.8); border: none;
+    background: rgba(85, 85, 85, 0.8); border: none;
     color: var(--text-main); padding: 8px 16px;
-    border-radius: 6px; cursor: pointer;
+    border-radius: 6px;
+    cursor: pointer;
     display: flex; align-items: center; gap: 6px;
+    transition: background 0.2s;
 }
-.btn-close:hover { background: rgba(255, 255, 255, 0.5); }
+
+.btn-close:hover { background: rgba(102, 102, 102, 0.9); }
 
 /* 日历本体美化 (FullCalendar 覆盖样式) */
 #calendar {
     flex: 1;
-    background: rgba(226, 226, 226, 0.8);
+    background: rgba(51, 51, 51, 0.8);
     border-radius: 12px;
     padding: 15px;
     color: var(--text-main);
 }
 
-/* 强制修改日历文字颜色 */
-.fc-theme-standard td, .fc-theme-standard th { border-color: rgba(226, 226, 226, 0.8); }
-.fc-col-header-cell-cushion, .fc-daygrid-day-number { color: var(--text-main); text-decoration: none; }
-.fc-timegrid-slot-label-cushion { color: var(--text-sub); }
+/* FullCalendar 深色主题覆盖 */
+.fc-theme-standard {
+    background: transparent;
+}
+
+.fc-theme-standard td, 
+.fc-theme-standard th {
+    border-color: rgba(100, 105, 115, 0.5);
+}
+
+.fc-col-header-cell-cushion,
+.fc-daygrid-day-number {
+    color: var(--text-main);
+    text-decoration: none;
+}
+
+.fc-timegrid-slot-label-cushion {
+    color: var(--text-sub);
+}
+
+.fc-toolbar {
+    color: var(--text-main);
+    margin-bottom: 15px;
+}
+
+.fc-button {
+    background: rgba(74, 79, 91, 0.8) !important;
+    border: 1px solid rgba(100, 105, 115, 0.5) !important;
+    color: var(--text-main) !important;
+    border-radius: 6px !important;
+}
+
+.fc-button:hover {
+    background: rgba(84, 89, 102, 0.9) !important;
+}
+
+.fc-button-primary:not(:disabled):active,
+.fc-button-primary:not(:disabled).fc-button-active {
+    background: rgba(94, 99, 112, 0.9) !important;
+}
+
+.fc-event {
+    background: rgba(107, 114, 128, 0.8) !important;
+    border: none !important;
+    border-radius: 6px !important;
+}
+
+.fc-event-title {
+    color: var(--text-main) !important;
+}
+
+.fc-day-today {
+    background: rgba(107, 114, 128, 0.2) !important;
+}
+
+/* 日程编辑模态框样式 */
+.modal {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    padding: 0;
+    width: 90%;
+    max-width: 500px;
+    background: rgba(60, 60, 60, 0.95);
+    color: var(--text-main);
+}
+
+.modal::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+}
+
+.form-group label {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 10px;
+    border: 1px solid rgba(100, 105, 115, 0.5);
+    border-radius: 8px;
+    background: rgba(74, 79, 91, 0.8);
+    color: var(--text-main);
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #6b7280;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn.primary {
+    background: rgba(107, 114, 128, 0.8);
+    color: var(--text-main);
+}
+
+.btn.primary:hover {
+    background: rgba(117, 124, 138, 0.9);
+}
+
+.btn.secondary {
+    background: rgba(74, 79, 91, 0.8);
+    color: var(--text-sub);
+}
+
+.btn.secondary:hover {
+    background: rgba(84, 89, 102, 0.9);
+}
 /* #endregion */

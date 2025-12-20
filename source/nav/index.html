@@ -15,6 +15,7 @@ layout: false
     <link rel="stylesheet" href="/nav/style.css">
     <link rel="preload" as="image" href="/images/shanghai_loadmap.jpg">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/rrule.global.min.js'></script>
 </head>
 
 <body>
@@ -22,7 +23,6 @@ layout: false
         Install App
     </button>
     <div class="top-banner-bg">
-
     </div>
 
     <div class="container">
@@ -132,13 +132,12 @@ layout: false
                 <span class="cal-title">日程与计划</span>
                 <span class="cal-desc">点击进入全屏管理</span>
             </div>
-            
+
             <div class="cal-arrow">
                 <i class="ri-arrow-right-s-line"></i>
             </div>
         </div>
     </div>
-
     
     <dialog id="calendarModal" class="full-screen-modal">
         <div class="calendar-layout">
@@ -150,12 +149,77 @@ layout: false
 
             <div class="main">
                 <div class="toolbar">
+                    <button onclick="openEventModal()" class="btn-add">
+                        <i class="ri-add-line"></i> 添加日程
+                    </button>
                     <button onclick="closeCalendar()" class="btn-close">
                         <i class="ri-arrow-left-line"></i> 返回
                     </button>
                 </div>
                 
                 <div id="calendar"></div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- 日程编辑模态框 -->
+    <dialog id="eventModal" class="modal">
+        <div class="modal-content">
+            <h3><i class="ri-calendar-event-line"></i> 编辑日程</h3>
+            
+            <div class="form-group">
+                <label>标题</label>
+                <input type="text" id="eventTitle" placeholder="请输入日程标题">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>开始时间</label>
+                    <input type="datetime-local" id="eventStart">
+                </div>
+                <div class="form-group">
+                    <label>结束时间</label>
+                    <input type="datetime-local" id="eventEnd">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>地点</label>
+                <input type="text" id="eventLocation" placeholder="请输入地点">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>提醒时间</label>
+                    <select id="eventReminder">
+                        <option value="0">无提醒</option>
+                        <option value="5">提前5分钟</option>
+                        <option value="15">提前15分钟</option>
+                        <option value="30">提前30分钟</option>
+                        <option value="60">提前1小时</option>
+                        <option value="1440">提前1天</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>重复</label>
+                    <select id="eventRepeat">
+                        <option value="">不重复</option>
+                        <option value="daily">每天</option>
+                        <option value="weekly">每周</option>
+                        <option value="monthly">每月</option>
+                        <option value="workweek">工作日</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>备注</label>
+                <textarea id="eventDescription" placeholder="请输入备注信息" rows="3"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeEventModal()">取消</button>
+                <button class="btn primary" onclick="saveEvent()">保存</button>
             </div>
         </div>
     </dialog>
