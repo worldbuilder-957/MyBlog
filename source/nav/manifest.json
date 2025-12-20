@@ -1,7 +1,7 @@
 {
   "name": "worlbuilder957",
   "short_name": "WB957",
-  "start_url": "./index.html",
+  "start_url": "/nav/",
   "scope": "/nav/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -11,6 +11,11 @@
     {
       "src": "CatIcon192.png",
       "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "CatIcon512.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]
