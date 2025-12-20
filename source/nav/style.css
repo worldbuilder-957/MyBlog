@@ -186,7 +186,9 @@ body {
     background: var(--card-bg);
     border-radius: 50px;                /* 圆角更大 */
     height: 64px;                       /*给出一个固定高度*/
-    padding: 0 24px;                    /*去掉上下内边距，只留左右*/
+    padding: 0 24px;
+    position: relative;                 /* 关键：为了让下拉菜单相对于它定位 */
+    z-index: 100;                       /* 提高层级，防止被下面的卡片遮挡 */
 }
 .search-box i { 
     font-size: 1.4rem; 
@@ -201,12 +203,65 @@ body {
     background: transparent;
     font-size: 1.2rem;
     width: 100%;
-    height: 100%;                      /* 关键：让输入框高度撑满父容器 */
+    height: 100%;
+    flex: 1;                           /* 关键：让输入框高度撑满父容器 */
     outline: none;
     color: var(--text-main);
     padding: 0;                        /* 关键：强制去掉输入框默认的内边距 */
     margin: 0;                         /* 关键：强制去掉外边距 */
     line-height: normal;               /* 关键：重置行高 */
+}
+
+/*  引擎选择器按钮 */
+.engine-selector {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 1.2rem;
+    margin-right: 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+.engine-selector:hover { background: rgba(255,255,255,0.1); }
+
+/* 下拉菜单 (平时隐藏) */
+.engine-dropdown {
+    display: none; /* 默认隐藏 */
+    position: absolute;
+    top: 50px; /* 在搜索框下面 */
+    left: 0;
+    width: 120px;
+    background: rgb(250, 250, 250); /* 深色背景 */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgb(250, 250, 250);
+    border-radius: 10px;
+    padding: 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 1000;
+    flex-direction: column;
+}
+
+/* 显示状态 (JS会切换这个类) */
+.engine-dropdown.show { display: flex; animation: fadeIn 0.2s ease; }
+
+/*  单个选项 */
+.engine-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.engine-option:hover { background: rgba(255,255,255,0.1); }
+.engine-option i { width: 20px; text-align: center; }
+
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 /* #endregion */
 

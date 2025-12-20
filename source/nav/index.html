@@ -26,9 +26,25 @@ layout: false
     </div>
 
     <div class="container">
+        
         <div class="card search-box">
-            <i class="ri-search-line"></i>
-            <input type="text" id="searchInput" placeholder="Search Google..." onkeypress="handleSearch(event)" autocomplete="off">
+            <div class="engine-selector" onclick="toggleEngineList(event)">
+                <i id="current-engine-icon" class="ri-bing-fill"></i>
+                
+                <div class="engine-dropdown" id="engine-dropdown">
+                    <div class="engine-option" onclick="selectEngine('bing')">
+                        <i class="ri-bing-fill"></i> Bing
+                    </div>
+                    <div class="engine-option" onclick="selectEngine('google')">
+                        <i class="ri-google-fill"></i> Google
+                    </div>
+                    <div class="engine-option" onclick="selectEngine('baidu')">
+                        <i class="ri-baidu-fill"></i> Baidu
+                    </div>
+                </div>
+            </div>
+
+            <input type="text" id="SearchInput" placeholder="Search..." onkeypress="handleSearch(event)" autocomplete="off">
         </div>
 
         <div class="card time-card">

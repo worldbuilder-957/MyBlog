@@ -361,7 +361,7 @@ setInterval(() => {
 
 // #endregion ==================================
 
-// #region 6. 快捷链接模块 (Wetab风格) =========================
+// #region 8. 快捷链接模块 (Wetab风格) =========================
 
 // 1. 定义应用数据 (你想加什么就在这里写，不用动 HTML)
 const apps = [
@@ -398,7 +398,7 @@ renderApps();
 
 // #endregion =================================
 
-// #region 7. 飞书级日历系统逻辑 =========================
+// #region 9. 飞书级日历系统逻辑 =========================
 
 let calendarInstance = null; // 保存日历实例
 let currentEventId = null; // 当前编辑的事件ID
@@ -738,5 +738,76 @@ function formatDateForInput(date) {
     
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+// #endregion
+
+// #region --- 10. 搜索引擎切换模块 ---
+
+// 1. 定义引擎配置
+const searchEngines = {
+    bing: {
+        url: "https://cn.bing.com/search?q=",
+        icon: "ri-bing-fill"
+    },
+    google: {
+        url: "https://www.google.com/search?q=",
+        icon: "ri-google-fill"
+    },
+    baidu: {
+        url: "https://www.baidu.com/s?wd=",
+        icon: "ri-baidu-fill"
+    }
+};
+
+// 默认引擎 (你可以改成 google 或 baidu)
+let currentEngine = 'google';
+
+// 2. 切换下拉菜单显示/隐藏
+function toggleEngineList(e) {
+    e.stopPropagation(); // 阻止冒泡，防止触发 document 的点击关闭
+    const dropdown = document.getElementById('engine-dropdown');
+    dropdown.classList.toggle('show');
+}
+
+// 3. 选择引擎
+function selectEngine(engineKey) {
+    // 更新当前引擎变量
+    currentEngine = engineKey;
+    
+    // 更新左侧图标
+    const icon = document.getElementById('current-engine-icon');
+    icon.className = searchEngines[engineKey].icon;
+    
+    // (可选) 更新 Placeholder 提示文字
+    // document.getElementById('search-input').placeholder = `Search with ${engineKey}...`;
+
+    // 存入本地存储，下次打开记住选择
+    localStorage.setItem('preferredEngine', currentEngine);
+}
+
+// 4. 执行搜索 (回车触发)
+function handleSearch(e) {
+    if (e.key === 'Enter') {
+        const query = document.getElementById('search-input').value;
+        if (query.trim()) {
+            const url = searchEngines[currentEngine].url + encodeURIComponent(query);
+            window.open(url, '_blank'); // 在新标签页打开
+        }
+    }
+}
+
+// 5. 初始化：读取上次的选择
+document.addEventListener('DOMContentLoaded', () => {
+    const savedEngine = localStorage.getItem('preferredEngine');
+    if (savedEngine && searchEngines[savedEngine]) {
+        selectEngine(savedEngine);
+    }
+    
+    // 点击页面其他地方，关闭下拉菜单
+    document.addEventListener('click', () => {
+        const dropdown = document.getElementById('engine-dropdown');
+        if (dropdown) dropdown.classList.remove('show');
+    });
+});
 
 // #endregion
