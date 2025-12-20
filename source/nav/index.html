@@ -30,11 +30,11 @@ layout: false
         
         <div class="card search-box">
             <div class="engine-selector" onclick="toggleEngineList(event)">
-                <i id="current-engine-icon" class="ri-bing-fill"></i>
+                <i id="current-engine-icon" class="ri-google-fill"></i>
                 
                 <div class="engine-dropdown" id="engine-dropdown">
                     <div class="engine-option" onclick="selectEngine('bing')">
-                        <i class="ri-bing-fill"></i> Bing
+                        <i class="ri-search-fill"></i> Bing
                     </div>
                     <div class="engine-option" onclick="selectEngine('google')">
                         <i class="ri-google-fill"></i> Google
@@ -45,7 +45,7 @@ layout: false
                 </div>
             </div>
 
-            <input type="text" id="SearchInput" placeholder="Search..." onkeypress="handleSearch(event)" autocomplete="off">
+            <input type="text" id="search-input" placeholder="Search..." onkeypress="handleSearch(event)" autocomplete="off">
         </div>
 
         <div class="card time-card">

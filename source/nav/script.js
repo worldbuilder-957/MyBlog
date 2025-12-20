@@ -738,7 +738,7 @@ function formatDateForInput(date) {
 const searchEngines = {
     bing: {
         url: "https://cn.bing.com/search?q=",
-        icon: "ri-bing-fill"
+        icon: "ri-search-fill"
     },
     google: {
         url: "https://www.google.com/search?q=",
@@ -782,7 +782,7 @@ function handleSearch(e) {
         const query = document.getElementById('search-input').value;
         if (query.trim()) {
             const url = searchEngines[currentEngine].url + encodeURIComponent(query);
-            window.open(url, '_blank');                   // 在新标签页打开
+            window.open(url, '_blank');                            // 在新标签页打开
         }
     }
 }
