@@ -94,7 +94,7 @@ updateCalendar();
 setInterval(updateCalendar, 60 * 60 * 1000);
 // #endregion =================================================================
 
-// #region 4. 超级待办事项 (Pro版)======================================================
+// #region 3. 超级待办事项 (Pro版)======================================================
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
 
@@ -205,7 +205,7 @@ function closeTaskModal() { modal.close(); }
 renderTodos();
 // #endregion ================================================================= 
 
-// #region 5. 天气功能 (通过API接入和风天气)==============================================
+// #region 4. 天气功能 (通过API接入和风天气)==============================================
 async function fetchWeather() {
     const apiKey = '4dce09f66f4c46c1a5d5f631f019290e'; // 这里填和风天气的 apiKey
     const locationID = '101280701'; // 珠海的ID
@@ -266,7 +266,7 @@ if ('serviceWorker' in navigator) {
 }
 // #endregion =================================================================
 
-// #region 6. PWA 安装提示===========================================================
+// #region 5. PWA 安装提示===========================================================
   let deferredPrompt;                                     // 用来存浏览器的“安装票据”
   const installBtn = document.getElementById('install-btn');
 
@@ -319,7 +319,7 @@ if ('serviceWorker' in navigator) {
   });
 // #endregion ================================================================= 
 
-// #region 7. 股票模块 (新浪静态图版) =========================
+// #region 6. 股票模块 (新浪静态图版) =========================
 function changeStock(code, btnElement) {
     const img = document.getElementById('stock-image');
     
@@ -352,7 +352,7 @@ setInterval(() => {
 
 // #endregion ==================================
 
-// #region 8. 快捷链接模块 (Wetab风格) =========================
+// #region 7. 快捷链接模块 (Wetab风格) =========================
 
 // 1. 定义应用数据 (你想加什么就在这里写，不用动 HTML)
 const apps = [
@@ -389,7 +389,7 @@ renderApps();
 
 // #endregion =================================
 
-// #region 9. 飞书级日历系统逻辑 =========================
+// #region 8. 飞书级日历系统逻辑 =========================
 
 let calendarInstance = null; // 保存日历实例
 let currentEventId = null; // 当前编辑的事件ID
@@ -732,7 +732,7 @@ function formatDateForInput(date) {
 
 // #endregion
 
-// #region --- 10. 搜索引擎及搜索功能实现 ---
+// #region 9. 搜索引擎及搜索功能实现 ========================
 
 // 1. 定义引擎配置
 const searchEngines = {
