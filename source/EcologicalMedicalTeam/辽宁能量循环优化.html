@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>辽宁能量循环优化</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", sans-serif; }
+    body {
+      background: #f0f8f0;
+      color: #2c3e50;
+      padding: 15px;
+    }
+    .header {
+      text-align: center;
+      background: linear-gradient(135deg, #2e7d32, #4caf50);
+      color: white;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .panel {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    h2 {
+      margin-bottom: 16px;
+      color: #2e7d32;
+      font-size: 18px;
+    }
+    .materials {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .material {
+      width: 80px;
+      height: 90px;
+      background: #e8f5e9;
+      border: 2px dashed #4caf50;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.2s;
+      padding: 6px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .material:active { transform: scale(1.1); }
+    .material svg {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 4px;
+    }
+    .biogas-digester {
+      width: 180px;
+      height: 180px;
+      background: #fff8e1;
+      border: 3px solid #ff9800;
+      border-radius: 50%;
+      margin: 20px auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+    .digester-label {
+      font-weight: bold;
+      color: #e65100;
+    }
+    .digester-count {
+      font-size: 14px;
+      margin-top: 4px;
+      color: #5d4037;
+    }
+    .controls {
+      margin-top: 20px;
+    }
+    .slider-group {
+      margin: 15px 0;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #1b5e20;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+    }
+    .value-tag {
+      text-align: right;
+      font-weight: bold;
+      color: #e65100;
+      margin-top: 4px;
+    }
+    .report {
+      padding: 15px;
+      background: #e8f5e9;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+    .report-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+    }
+    .analysis {
+      padding: 12px;
+      background: #f1f8e9;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: 20px;
+    }
+    .energy-flow {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      margin-top: 20px;
+      position: relative;
+    }
+    .flow-item {
+      text-align: center;
+      font-size: 14px;
+    }
+    .arrow {
+      color: #4caf50;
+      font-size: 24px;
+    }
+    .chart-container {
+      position: relative;
+      height: 280px;
+      margin-top: 15px;
+    }
+    .chart-container canvas {
+      height: 280px !important;
+    }
+    .reset-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: #ffcdd2;
+      color: #b71c1c;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.2s;
+    }
+    .reset-btn:hover {
+      background: #ef9a9a;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>辽宁能量循环优化</h1>
+</div>
+
+<div class="container">
+  <!-- 左侧：操作区 -->
+  <div class="panel">
+    <h2>🌱 投入物料与发酵参数</h2>
+
+    <p><strong>拖拽下方物料到沼气池：</strong></p>
+    <div class="materials" id="materials">
+      <div class="material" data-type="straw" draggable="true">
+        <svg viewBox="0 0 24 24" fill="#81C784">
+          <path d="M12 2L9 8h6l-3-6z"/>
+          <circle cx="12" cy="10" r="1"/>
+          <path d="M8 14l2-4 2 4 2-4 2 4"/>
+        </svg>
+        秸秆 (干)
+      </div>
+      <div class="material" data-type="cow" draggable="true">
+        <svg viewBox="0 0 24 24" fill="#78909C">
+          <circle cx="8" cy="10" r="2"/>
+          <circle cx="16" cy="10" r="2"/>
+          <path d="M6 18c0-2 4-4 8-4s8 2 8 4v2H6v-2z"/>
+          <circle cx="12" cy="16" r="1.5" fill="#5D4037"/>
+        </svg>
+        牛粪
+      </div>
+      <div class="material" data-type="pig" draggable="true">
+        <svg viewBox="0 0 24 24" fill="#FF9800">
+          <circle cx="12" cy="12" r="6"/>
+          <circle cx="10" cy="10" r="1"/>
+          <circle cx="14" cy="10" r="1"/>
+          <path d="M8 16a2 2 0 1 0 4 0" stroke="#5D4037" stroke-width="1" fill="none"/>
+          <circle cx="12" cy="18" r="1.2" fill="#5D4037"/>
+        </svg>
+        猪粪
+      </div>
+    </div>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <div class="biogas-digester" id="digester">
+        <div class="digester-label">沼气池</div>
+        <div class="digester-count" id="input-count">已投入：0 kg</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="slider-group">
+        <label for="temp">发酵温度（℃）</label>
+        <input type="range" id="temp" min="20" max="40" value="35">
+        <div class="value-tag" id="temp-val">35 ℃</div>
+      </div>
+      <div class="slider-group">
+        <label for="days">发酵时间（天）</label>
+        <input type="range" id="days" min="5" max="30" value="20">
+        <div class="value-tag" id="days-val">20 天</div>
+      </div>
+
+      <button class="reset-btn" id="resetBtn">🔄 重置所有参数</button>
+    </div>
+
+    <!-- 基础数值报告（保留在左侧） -->
+    <div class="report" id="report">
+      <div class="report-line"><span>沼气产量：</span><span id="gas">0 m³</span></div>
+      <div class="report-line"><span>热能当量：</span><span id="energy">0 kWh</span></div>
+      <div class="report-line"><span>碳减排：</span><span id="co2">0 kg</span></div>
+      <div class="report-line"><span>经济效益：</span><span id="profit">0 元</span></div>
+    </div>
+  </div>
+
+  <!-- 右侧：可视化 + 效益分析报告 -->
+  <div class="panel">
+    <h2>⚡ 能量流动与效益分析</h2>
+
+    <div class="energy-flow">
+      <div class="flow-item">物料输入</div>
+      <div class="arrow">→</div>
+      <div class="flow-item">沼气池</div>
+      <div class="arrow">→</div>
+      <div class="flow-item">温室/炊事/发电</div>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <!-- ✅ 动态效益分析报告：放在统计图下方 -->
+    <div class="analysis" id="analysisReport">
+      📊 请投入物料以生成效益分析报告。
+    </div>
+  </div>
+</div>
+
+<script>
+  const materialData = {
+    straw: { name: '秸秆', gasYield: 0.25 },
+    cow:   { name: '牛粪', gasYield: 0.35 },
+    pig:   { name: '猪粪', gasYield: 0.40 }
+  };
+
+  let inputs = { straw: 0, cow: 0, pig: 0 };
+  let temp = 35;
+  let days = 20;
+
+  const ctx = document.getElementById('chart').getContext('2d');
+  const myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['沼气 (m³)', '热能 (kWh)', '碳减排 (kg)', '收益 (元)'],
+      datasets: [{
+        label: '综合效益',
+        data: [0, 0, 0, 0],
+        backgroundColor: ['#4caf50', '#8bc34a', '#cddc39', '#ffeb3b'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 10, bottom: 10 } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0, font: { size: 12 } },
+          title: { display: true, text: '数值', font: { size: 13 } }
+        },
+        x: {
+          ticks: { font: { size: 11 } }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.dataset.label}: ${context.parsed.y}`
+          }
+        }
+      }
+    }
+  });
+
+  function generateAnalysis() {
+    const total = inputs.straw + inputs.cow + inputs.pig;
+    if (total === 0) {
+      document.getElementById('analysisReport').innerHTML = '📊 请投入物料以生成效益分析报告。';
+      return;
+    }
+
+    const strawPct = (inputs.straw / total * 100).toFixed(1);
+    const cowPct   = (inputs.cow   / total * 100).toFixed(1);
+    const pigPct   = (inputs.pig   / total * 100).toFixed(1);
+
+    const gasStraw = inputs.straw * materialData.straw.gasYield;
+    const gasCow   = inputs.cow   * materialData.cow.gasYield;
+    const gasPig   = inputs.pig   * materialData.pig.gasYield;
+    const totalGasTheoretical = gasStraw + gasCow + gasPig;
+
+    const tempEff = Math.max(0.5, 1 - 0.02 * Math.abs(temp - 35));
+    const timeEff = days >= 20 ? 1 : days / 20;
+    const overallEff = (tempEff * timeEff * 100).toFixed(1);
+
+    let mainContributor = '';
+    if (gasPig >= gasCow && gasPig >= gasStraw) mainContributor = '猪粪';
+    else if (gasCow >= gasStraw) mainContributor = '牛粪';
+    else mainContributor = '秸秆';
+
+    let limitation = '';
+    const tempOff = temp !== 35;
+    const timeShort = days < 20;
+    if (tempOff && timeShort) {
+      limitation = '温度偏离和发酵时间不足';
+    } else if (tempOff) {
+      limitation = '温度偏离（最佳35℃）';
+    } else if (timeShort) {
+      limitation = '发酵时间不足（建议≥20天）';
+    } else {
+      limitation = '无显著限制';
+    }
+
+    let suggestion = tempOff || timeShort
+      ? '建议将温度调至35℃、发酵时间不少于20天，可进一步提升产气效率。'
+      : '当前参数处于高效区间，产气效率已最大化。';
+
+    let report = `
+      <strong>📈 辽宁能量循环效益分析报告</strong><br><br>
+      您共投入 <strong>${total} kg</strong> 物料，其中：
+      秸秆 ${strawPct}%、牛粪 ${cowPct}%、猪粪 ${pigPct}%。<br><br>
+      
+      在理想条件下，这些物料可产沼气 <strong>${totalGasTheoretical.toFixed(1)} m³</strong>。
+      其中：<br>
+      • 秸秆贡献：${gasStraw.toFixed(1)} m³<br>
+      • 牛粪贡献：${gasCow.toFixed(1)} m³<br>
+      • 猪粪贡献：${gasPig.toFixed(1)} m³<br><br>
+      
+      当前发酵条件（${temp}℃，${days}天）下，系统综合效率为 <strong>${overallEff}%</strong>，
+      主要受限于${limitation}。<br><br>
+      
+      💡 <strong>分析结论：</strong>${mainContributor} 是当前产气的主要来源。
+      ${suggestion}
+    `;
+
+    document.getElementById('analysisReport').innerHTML = report;
+  }
+
+  function updateDisplay() {
+    const totalInput = inputs.straw + inputs.cow + inputs.pig;
+    document.getElementById('input-count').textContent = `已投入：${totalInput} kg`;
+
+    const tempEff = Math.max(0.5, 1 - 0.02 * Math.abs(temp - 35));
+    const timeEff = days >= 20 ? 1 : days / 20;
+
+    let totalGas = 0;
+    totalGas += inputs.straw * materialData.straw.gasYield;
+    totalGas += inputs.cow   * materialData.cow.gasYield;
+    totalGas += inputs.pig   * materialData.pig.gasYield;
+    totalGas *= tempEff * timeEff;
+
+    const energy = totalGas * 6;
+    const co2 = totalGas * 1.8;
+    const profit = totalGas * 2.5;
+
+    document.getElementById('gas').textContent = totalGas.toFixed(1) + ' m³';
+    document.getElementById('energy').textContent = energy.toFixed(1) + ' kWh';
+    document.getElementById('co2').textContent = co2.toFixed(1) + ' kg';
+    document.getElementById('profit').textContent = profit.toFixed(1) + ' 元';
+
+    myChart.data.datasets[0].data = [
+      parseFloat(totalGas.toFixed(1)),
+      parseFloat(energy.toFixed(1)),
+      parseFloat(co2.toFixed(1)),
+      parseFloat(profit.toFixed(1))
+    ];
+    myChart.update();
+
+    // ✅ 生成动态分析报告（现在显示在右侧图表下方）
+    generateAnalysis();
+  }
+
+  // 拖拽逻辑
+  document.querySelectorAll('.material').forEach(el => {
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('type', el.dataset.type);
+    });
+  });
+
+  document.getElementById('digester').addEventListener('dragover', (e) => e.preventDefault());
+  document.getElementById('digester').addEventListener('drop', (e) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('type');
+    inputs[type] += 50;
+    updateDisplay();
+  });
+
+  // 参数绑定
+  document.getElementById('temp').addEventListener('input', (e) => {
+    temp = parseInt(e.target.value);
+    document.getElementById('temp-val').textContent = temp + ' ℃';
+    updateDisplay();
+  });
+
+  document.getElementById('days').addEventListener('input', (e) => {
+    days = parseInt(e.target.value);
+    document.getElementById('days-val').textContent = days + ' 天';
+    updateDisplay();
+  });
+
+  // 重置
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    inputs = { straw: 0, cow: 0, pig: 0 };
+    temp = 35;
+    days = 20;
+    document.getElementById('temp').value = temp;
+    document.getElementById('days').value = days;
+    document.getElementById('temp-val').textContent = temp + ' ℃';
+    document.getElementById('days-val').textContent = days + ' 天';
+    updateDisplay();
+  });
+
+  updateDisplay();
+</script>
+
+</body>
+</html>

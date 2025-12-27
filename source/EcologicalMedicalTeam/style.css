@@ -542,6 +542,27 @@ html, body {
     margin-bottom: 8px;
 }
 
+.external-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.external-link-btn:hover {
+    background: var(--accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 155, 95, 0.3);
+}
+
 .case-controls {
     margin-bottom: 30px;
 }
@@ -1018,6 +1039,17 @@ html, body {
 
     .result-metrics {
         grid-template-columns: 1fr;
+    }
+
+    .case-header > div {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 15px;
+    }
+
+    .external-link-btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 
