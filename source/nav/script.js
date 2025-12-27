@@ -411,20 +411,56 @@ function initCalendarSystem() {
         }
     });
 
-    // 2. 初始化右侧“日历”
+    // 2. 初始化右侧"日历"
     calendarInstance = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek', // 周视图 (飞书经典)
+        initialView: 'timeGridWeek', // 周视图 
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek'
+            right: 'dayGridMonth,timeGridThreeDay,timeGridWeek,timeGridDay' // 月视图、三日视图、周视图、日视图
         },
         locale: 'zh-cn',
         firstDay: 1, // 周一开头
-        height: '100%',
+        height: 'auto', // 改为 auto 以自适应容器
+        aspectRatio: 1.8, // 设置宽高比
         editable: true,     // 允许在日历里拖动
         droppable: true,    // ✨ 允许从外部拖进去！
         plugins: ['rrule'], // 集成RRule插件
+        // 时间网格配置 - 确保时间轴显示
+        slotMinTime: '00:00:00', // 最早显示时间
+        slotMaxTime: '24:00:00', // 最晚显示时间
+        slotDuration: '00:30:00', // 时间间隔（30分钟）
+        slotLabelInterval: '01:00:00', // 标签间隔（1小时）
+        allDaySlot: true, // 显示全天事件区域
+        // 自定义视图配置
+        views: {
+            dayGridMonth: {
+                buttonText: '月'
+            },
+            timeGridThreeDay: {
+                type: 'timeGrid',
+                duration: { days: 3 },
+                buttonText: '三日',
+                slotMinTime: '00:00:00',
+                slotMaxTime: '24:00:00',
+                slotDuration: '00:30:00',
+                slotLabelInterval: '01:00:00'
+            },
+            timeGridWeek: {
+                buttonText: '周',
+                slotMinTime: '00:00:00',
+                slotMaxTime: '24:00:00',
+                slotDuration: '00:30:00',
+                slotLabelInterval: '01:00:00'
+            },
+            timeGridDay: {
+                buttonText: '日',
+                slotMinTime: '00:00:00',
+                slotMaxTime: '24:00:00',
+                slotDuration: '00:30:00',
+                slotLabelInterval: '01:00:00'
+            }
+        },
         
         // 📥 核心：当外部任务被扔进日历时
         drop: function(info) {
@@ -465,49 +501,96 @@ function initCalendarSystem() {
     
     // 3. 加载数据
     refreshCalendarData();
+    
+    // 4. 确保日历尺寸正确
+    setTimeout(() => {
+        calendarInstance.updateSize();
+        // 强制刷新视图以确保时间网格正确显示
+        const currentView = calendarInstance.view;
+        if (currentView) {
+            calendarInstance.changeView(currentView.type);
+        }
+    }, 300);
 }
 
 // 🔄 数据刷新函数：从 LocalStorage 读取并分发
 function refreshCalendarData() {
+    // 检查日历实例是否存在
+    if (!calendarInstance) {
+        console.warn('日历实例未初始化，尝试初始化...');
+        // 如果日历未初始化，尝试初始化
+        const calendarEl = document.getElementById('calendar');
+        if (calendarEl) {
+            initCalendarSystem();
+        } else {
+            console.error('日历容器不存在，无法刷新数据');
+            return;
+        }
+    }
+    
     const calendarEvents = JSON.parse(localStorage.getItem('calendarEvents')) || [];
     const todos = JSON.parse(localStorage.getItem('myRichTodos')) || [];
     const containerEl = document.getElementById('external-events');
     
     // 清空旧数据
-    containerEl.innerHTML = '';
-    calendarInstance.removeAllEvents();
+    if (containerEl) {
+        containerEl.innerHTML = '';
+    }
+    
+    // 确保 calendarInstance 存在后再调用方法
+    if (calendarInstance) {
+        calendarInstance.removeAllEvents();
+    } else {
+        console.error('日历实例仍然不存在，无法刷新数据');
+        return;
+    }
 
     // 添加日历事件
     calendarEvents.forEach(event => {
+        // 确保 extendedProps 存在，兼容旧数据
+        const extendedProps = event.extendedProps || {};
+        
+        // 确保时间格式正确（ISO 8601 格式）
+        let startTime = event.start;
+        let endTime = event.end;
+        
+        // 如果时间格式不正确，尝试转换
+        if (startTime && !startTime.includes('T')) {
+            // 如果只有日期，添加默认时间
+            startTime = startTime.includes(':') ? startTime : startTime + 'T09:00:00';
+        }
+        if (endTime && !endTime.includes('T')) {
+            endTime = endTime.includes(':') ? endTime : endTime + 'T10:00:00';
+        }
+        
+        const eventData = {
+            id: event.id,
+            title: event.title || '未命名事件',
+            start: startTime,
+            end: endTime,
+            backgroundColor: event.backgroundColor || '#6b7280',
+            borderColor: event.borderColor || '#6b7280',
+            textColor: event.textColor || '#ffffff',
+            extendedProps: {
+                location: extendedProps.location || '',
+                reminder: extendedProps.reminder || 0,
+                description: extendedProps.description || ''  // 确保备注字段存在
+            }
+        };
+        
+        // 如果有重复规则，添加 rrule
         if (event.rrule) {
-            // 添加重复事件
-            calendarInstance.addEvent({
-                id: event.id,
-                title: event.title,
-                start: event.start,
-                end: event.end,
-                backgroundColor: '#6b7280',
-                extendedProps: {
-                    location: event.extendedProps?.location || '',
-                    reminder: event.extendedProps?.reminder || 0,
-                    description: event.extendedProps?.description || ''
-                },
-                rrule: event.rrule
-            });
-        } else {
-            // 添加普通事件
-            calendarInstance.addEvent({
-                id: event.id,
-                title: event.title,
-                start: event.start,
-                end: event.end,
-                backgroundColor: '#6b7280',
-                extendedProps: {
-                    location: event.extendedProps?.location || '',
-                    reminder: event.extendedProps?.reminder || 0,
-                    description: event.extendedProps?.description || ''
-                }
-            });
+            eventData.rrule = event.rrule;
+        }
+        
+        try {
+            if (calendarInstance) {
+                calendarInstance.addEvent(eventData);
+            } else {
+                console.error('日历实例不存在，无法添加事件');
+            }
+        } catch (error) {
+            console.error('添加事件失败:', error, eventData);
         }
     });
 
@@ -551,7 +634,10 @@ function openCalendarView() {
             initCalendarSystem();
         } else {
             refreshCalendarData(); // 每次打开都重新读最新数据
-            calendarInstance.updateSize(); // 重新适应屏幕大小
+            // 延迟更新尺寸，确保容器已完全渲染
+            setTimeout(() => {
+                calendarInstance.updateSize(); // 重新适应屏幕大小
+            }, 150);
         }
     }, 100);
 }
@@ -598,12 +684,15 @@ function openEventModal(startDate = null) {
 function openEventModalForEdit(event) {
     const modal = document.getElementById('eventModal');
     
-    document.getElementById('eventTitle').value = event.title;
+    // 确保 extendedProps 存在，兼容旧数据
+    const extendedProps = event.extendedProps || {};
+    
+    document.getElementById('eventTitle').value = event.title || '';
     document.getElementById('eventStart').value = formatDateForInput(event.start);
     document.getElementById('eventEnd').value = formatDateForInput(event.end);
-    document.getElementById('eventLocation').value = event.extendedProps.location || '';
-    document.getElementById('eventReminder').value = event.extendedProps.reminder || '0';
-    document.getElementById('eventDescription').value = event.extendedProps.description || '';
+    document.getElementById('eventLocation').value = extendedProps.location || '';
+    document.getElementById('eventReminder').value = extendedProps.reminder || '0';
+    document.getElementById('eventDescription').value = extendedProps.description || '';  // 确保备注正确读取
     
     // 设置重复规则
     if (event.rrule) {
@@ -645,74 +734,139 @@ function closeEventModal() {
 
 // 💾 保存事件
 function saveEvent() {
-    const title = document.getElementById('eventTitle').value;
-    const start = document.getElementById('eventStart').value;
-    const end = document.getElementById('eventEnd').value;
-    const location = document.getElementById('eventLocation').value;
-    const reminder = parseInt(document.getElementById('eventReminder').value);
-    const repeat = document.getElementById('eventRepeat').value;
-    const description = document.getElementById('eventDescription').value;
-    
-    if (!title || !start || !end) {
-        alert('请填写标题和时间');
-        return;
-    }
-    
-    // 创建事件对象
-    const eventData = {
-        id: currentEventId || Date.now().toString(),
-        title: title,
-        start: start,
-        end: end,
-        extendedProps: {
-            location: location,
-            reminder: reminder,
-            description: description
+    try {
+        const title = document.getElementById('eventTitle').value.trim();
+        const start = document.getElementById('eventStart').value;
+        const end = document.getElementById('eventEnd').value;
+        const location = document.getElementById('eventLocation').value.trim();
+        const reminder = parseInt(document.getElementById('eventReminder').value) || 0;
+        const repeat = document.getElementById('eventRepeat').value;
+        const description = document.getElementById('eventDescription').value.trim();  // 读取备注并去除首尾空格
+        
+        // 验证必填字段
+        if (!title || !start || !end) {
+            alert('请填写标题和时间');
+            return;
         }
-    };
-    
-    // 添加重复规则
-    if (repeat) {
-        let rruleConfig = {
-            freq: null,
-            dtstart: start
+        
+        // 验证时间格式
+        if (!start.includes('T') || !end.includes('T')) {
+            alert('时间格式不正确，请重新选择时间');
+            return;
+        }
+        
+        // 验证结束时间晚于开始时间
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if (endDate <= startDate) {
+            alert('结束时间必须晚于开始时间');
+            return;
+        }
+        
+        // 创建事件对象
+        const eventData = {
+            id: currentEventId || Date.now().toString(),
+            title: title,
+            start: start,
+            end: end,
+            extendedProps: {
+                location: location || '',
+                reminder: reminder || 0,
+                description: description || ''  // 确保备注字段始终存在，即使为空字符串
+            }
         };
         
-        switch (repeat) {
-            case 'daily':
-                rruleConfig.freq = RRule.DAILY;
-                break;
-            case 'weekly':
-                rruleConfig.freq = RRule.WEEKLY;
-                break;
-            case 'monthly':
-                rruleConfig.freq = RRule.MONTHLY;
-                break;
-            case 'workweek':
-                rruleConfig.freq = RRule.DAILY;
-                rruleConfig.byweekday = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR];
-                break;
+        // 添加重复规则（仅在RRule可用时）
+        if (repeat && typeof RRule !== 'undefined') {
+            try {
+                let rruleConfig = {
+                    freq: null,
+                    dtstart: start
+                };
+                
+                switch (repeat) {
+                    case 'daily':
+                        rruleConfig.freq = RRule.DAILY;
+                        break;
+                    case 'weekly':
+                        rruleConfig.freq = RRule.WEEKLY;
+                        break;
+                    case 'monthly':
+                        rruleConfig.freq = RRule.MONTHLY;
+                        break;
+                    case 'workweek':
+                        rruleConfig.freq = RRule.DAILY;
+                        rruleConfig.byweekday = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR];
+                        break;
+                }
+                
+                if (rruleConfig.freq !== null) {
+                    eventData.rrule = rruleConfig;
+                }
+            } catch (rruleError) {
+                console.warn('RRule配置失败，将保存为不重复事件:', rruleError);
+                // 如果RRule配置失败，继续保存但不添加重复规则
+            }
         }
         
-        eventData.rrule = rruleConfig;
+        // 保存到存储
+        let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+        
+        if (currentEventId) {
+            // 更新已有事件
+            const eventIndex = events.findIndex(e => e.id === currentEventId);
+            if (eventIndex !== -1) {
+                events[eventIndex] = eventData;
+            } else {
+                // 如果找不到，添加为新事件
+                events.push(eventData);
+            }
+        } else {
+            // 添加新事件
+            events.push(eventData);
+        }
+        
+        // 保存到localStorage
+        saveToStorage(events);
+        
+        // 更新日历显示（确保日历已初始化）
+        try {
+            // 检查日历容器是否存在且可见
+            const calendarEl = document.getElementById('calendar');
+            const calendarModal = document.getElementById('calendarModal');
+            
+            // 如果日历模态框是打开的，确保日历已初始化
+            if (calendarModal && calendarModal.open) {
+                if (!calendarInstance) {
+                    // 如果日历未初始化，先初始化
+                    if (calendarEl) {
+                        initCalendarSystem();
+                    }
+                }
+                
+                // 刷新日历数据
+                if (calendarInstance) {
+                    refreshCalendarData();
+                } else {
+                    console.warn('日历实例未初始化，数据已保存但未刷新显示');
+                }
+            } else {
+                // 如果日历视图未打开，数据已保存，下次打开时会自动加载
+                console.log('日历视图未打开，数据已保存到localStorage');
+            }
+        } catch (refreshError) {
+            console.error('刷新日历显示时出错:', refreshError);
+            // 即使刷新失败，数据也已经保存了
+        }
+        
+        // 关闭模态框
+        closeEventModal();
+        
+        console.log('事件保存成功:', eventData);
+    } catch (error) {
+        console.error('保存事件时出错:', error);
+        alert('保存失败，请检查控制台错误信息');
     }
-    
-    // 保存到存储
-    let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
-    
-    if (currentEventId) {
-        // 更新已有事件
-        events = events.map(e => e.id === currentEventId ? eventData : e);
-    } else {
-        // 添加新事件
-        events.push(eventData);
-    }
-    
-    saveToStorage(events);
-    
-    // 更新日历
-    refreshCalendarData();
-    closeEventModal();
 }
 
 // 🛠️ 辅助函数：格式化日期为input类型的datetime-local格式

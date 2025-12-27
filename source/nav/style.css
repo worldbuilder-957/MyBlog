@@ -481,7 +481,7 @@ body {
 }
 /* #endregion */
 
-/* 6. 快捷方式 (跨4列) */
+/* #region --- 6. 快捷方式 (跨4列) --- */
 .links-card {
     grid-column: span 4;
     flex-direction: row;
@@ -508,8 +508,9 @@ body {
     align-items: center;
     font-size: 24px;
 }
+/* #endregion */
 
-/* ----- 待办事项升级版样式 ----- */
+/* #region --- 7. 待办事项升级版样式 --- */
 
 /* 1. 顶部工具栏 */
 .icon-btn {
@@ -772,6 +773,7 @@ body {
     display: flex; flex-direction: column; gap: 15px;
     overflow: hidden;                                       /* 防止撑开 */
     background: rgba(250, 245, 210, 0.888);                     /* 主背景颜色 */
+    min-height: 0; /* 允许 flex 子元素收缩 */
 }
 
 /* 顶部工具栏 */
@@ -802,10 +804,34 @@ body {
 /* 日历本体美化 (FullCalendar 覆盖样式) */
 #calendar {
     flex: 1;
+    min-height: 600px; /* 确保最小高度 */
     background: rgba(253, 252, 252, 0.8);
     border-radius: 12px;
     padding: 15px;
     color: var(--text-main);
+    overflow: hidden; /* 防止内容溢出 */
+}
+
+/* 确保 FullCalendar 容器有正确的高度 */
+#calendar .fc {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#calendar .fc-view-harness {
+    min-height: 600px !important;
+    flex: 1 !important;
+}
+
+/* 确保时间网格视图的容器可见 */
+#calendar .fc-timeGrid-view .fc-scroller {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+#calendar .fc-timeGrid-view .fc-timegrid-body {
+    position: relative !important;
 }
 
 /* FullCalendar 深色主题覆盖 */
@@ -853,14 +879,118 @@ body {
     background: rgba(197, 210, 234, 0.8) !important;
     border: none !important;
     border-radius: 6px !important;
+    padding: 2px 4px !important;
+    margin: 1px 0 !important;
+    cursor: pointer !important;
+    font-size: 0.85rem !important;
 }
 
 .fc-event-title {
     color: var(--text-main) !important;
+    font-weight: 500 !important;
+    padding: 2px 4px !important;
+}
+
+/* 确保时间网格视图可见 */
+.fc-timeGrid-view .fc-timegrid-slot {
+    height: 2.5em !important;
+    border-top: 1px solid rgba(191, 200, 218, 0.3) !important;
+}
+
+.fc-timeGrid-view .fc-timegrid-slot-label {
+    padding: 0 8px !important;
+    font-size: 0.75rem !important;
+    color: var(--text-sub) !important;
+}
+
+.fc-timeGrid-view .fc-timegrid-col-frame {
+    border-left: 1px solid rgba(191, 200, 218, 0.3) !important;
+}
+
+/* 确保事件在时间网格中可见 */
+.fc-timegrid-event {
+    border-radius: 4px !important;
+    padding: 2px 6px !important;
+    margin: 1px 2px !important;
+}
+
+.fc-timegrid-event .fc-event-title {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .fc-day-today {
     background: rgba(107, 114, 128, 0.2) !important;
+}
+
+/* 确保日历视图正常显示 */
+.fc-scroller {
+    overflow-y: auto !important;
+}
+
+.fc-scroller-liquid-absolute {
+    position: relative !important;
+}
+
+/* 月视图优化 */
+.fc-dayGridMonth-view .fc-daygrid-day {
+    min-height: 100px;
+}
+
+/* 时间网格视图优化 */
+.fc-timeGrid-view {
+    display: block !important;
+}
+
+.fc-timeGrid-view .fc-timegrid-body {
+    min-height: 400px !important;
+}
+
+.fc-timeGrid-view .fc-timegrid-slot {
+    min-height: 2.5em !important;
+    height: 2.5em !important;
+}
+
+/* 确保时间轴列可见 */
+.fc-timegrid-axis {
+    width: 60px !important;
+    border-right: 1px solid rgba(191, 200, 218, 0.5) !important;
+}
+
+.fc-timegrid-axis-frame {
+    text-align: right !important;
+    padding-right: 8px !important;
+}
+
+/* 确保按钮组正常显示 */
+.fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fc-button-group {
+    display: flex;
+    gap: 2px;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    #calendar {
+        padding: 10px;
+        min-height: 400px;
+    }
+    
+    .fc-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .fc-toolbar-chunk {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* 日程编辑模态框样式 */
