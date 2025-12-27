@@ -7,11 +7,583 @@ layout: false
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcologicalMedicalTeam</title>
+    <title>生态医疗队AI指挥中心</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="/EcologicalMedicalTeam/style.css">
 </head>
 
 <body>
-    <h1>EcologicalMedicalTeam</h1>
+    <!-- 登录界面 -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <h1><i class="ri-leaf-line"></i> 生态医疗队AI指挥中心</h1>
+                <p class="subtitle">守护家乡的绿水青山田</p>
+                
+                <div class="login-form">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" id="student-name" placeholder="请输入您的姓名">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>选择医师专长</label>
+                        <div class="specialty-grid">
+                            <div class="specialty-option" data-specialty="植物" onclick="selectSpecialty('植物')">
+                                <i class="ri-plant-line"></i>
+                                <span>植物</span>
+                            </div>
+                            <div class="specialty-option" data-specialty="动物" onclick="selectSpecialty('动物')">
+                                <i class="ri-bear-smile-line"></i>
+                                <span>动物</span>
+                            </div>
+                            <div class="specialty-option" data-specialty="土壤" onclick="selectSpecialty('土壤')">
+                                <i class="ri-landscape-line"></i>
+                                <span>土壤</span>
+                            </div>
+                            <div class="specialty-option" data-specialty="水域" onclick="selectSpecialty('水域')">
+                                <i class="ri-water-percent-line"></i>
+                                <span>水域</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="startLearning()" id="start-btn" disabled>
+                        <i class="ri-play-line"></i> 进入指挥中心
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div id="main-screen" class="screen">
+        <!-- 顶部导航栏 -->
+        <nav class="top-nav">
+            <div class="nav-left">
+                <h2><i class="ri-leaf-line"></i> 生态医疗队</h2>
+                <span class="student-info" id="student-info">欢迎，生态医师</span>
+            </div>
+            <div class="nav-right">
+                <button class="nav-btn" onclick="showDashboard()">
+                    <i class="ri-dashboard-line"></i> 仪表盘
+                </button>
+                <button class="nav-btn" onclick="showReport()">
+                    <i class="ri-file-list-3-line"></i> 我的报告
+                </button>
+            </div>
+        </nav>
+
+        <!-- 学习中心 -->
+        <div class="learning-center" id="learning-center">
+            <div class="section-header">
+                <h2><i class="ri-book-open-line"></i> 学习中心</h2>
+            </div>
+            
+            <div class="clinic-grid">
+                <!-- 第一诊室 -->
+                <div class="clinic-card" onclick="openClinic(1)">
+                    <div class="clinic-icon">
+                        <i class="ri-node-tree"></i>
+                    </div>
+                    <h3>第一诊室</h3>
+                    <p>生态系统模拟器</p>
+                    <div class="clinic-badge">拖拽建模</div>
+                </div>
+
+                <!-- 第二诊室 -->
+                <div class="clinic-card" onclick="openClinic(2)">
+                    <div class="clinic-icon">
+                        <i class="ri-stethoscope-line"></i>
+                    </div>
+                    <h3>第二诊室</h3>
+                    <p>病例诊断平台</p>
+                    <div class="clinic-badge">数据交互</div>
+                </div>
+
+                <!-- 第三诊室 -->
+                <div class="clinic-card" onclick="openClinic(3)">
+                    <div class="clinic-icon">
+                        <i class="ri-flask-line"></i>
+                    </div>
+                    <h3>第三诊室</h3>
+                    <p>智慧药方设计器</p>
+                    <div class="clinic-badge">参数调节</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第一诊室：生态系统模拟器 -->
+    <div id="clinic-1" class="clinic-screen screen">
+        <div class="clinic-header">
+            <button class="back-btn" onclick="backToMain()">
+                <i class="ri-arrow-left-line"></i> 返回
+            </button>
+            <h2><i class="ri-node-tree"></i> 第一诊室：生态系统模拟器</h2>
+            <div class="score-display" id="ecosystem-score">
+                稳定性评分: <span id="stability-score">0</span>
+            </div>
+        </div>
+
+        <div class="clinic-content">
+            <div class="ecosystem-workspace">
+                <div class="component-palette">
+                    <h3>组件库</h3>
+                    <div class="components">
+                        <div class="component-item" draggable="true" data-type="sun">
+                            <i class="ri-sun-line"></i>
+                            <span>太阳</span>
+                        </div>
+                        <div class="component-item" draggable="true" data-type="water">
+                            <i class="ri-water-percent-line"></i>
+                            <span>水</span>
+                        </div>
+                        <div class="component-item" draggable="true" data-type="soil">
+                            <i class="ri-landscape-line"></i>
+                            <span>土壤</span>
+                        </div>
+                        <div class="component-item" draggable="true" data-type="plant">
+                            <i class="ri-plant-line"></i>
+                            <span>植物</span>
+                        </div>
+                        <div class="component-item" draggable="true" data-type="animal">
+                            <i class="ri-bear-smile-line"></i>
+                            <span>动物</span>
+                        </div>
+                        <div class="component-item" draggable="true" data-type="microbe">
+                            <i class="ri-microscope-line"></i>
+                            <span>微生物</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ecosystem-canvas" id="ecosystem-canvas" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <div class="canvas-hint">拖拽组件到此处构建生态系统</div>
+                </div>
+
+                <div class="ecosystem-info">
+                    <h3>系统信息</h3>
+                    <div class="info-panel">
+                        <div class="info-item">
+                            <span>能量流动:</span>
+                            <div class="energy-flow" id="energy-flow">未连接</div>
+                        </div>
+                        <div class="info-item">
+                            <span>水循环:</span>
+                            <div class="water-cycle" id="water-cycle">未连接</div>
+                        </div>
+                        <div class="info-item">
+                            <span>食物网:</span>
+                            <div class="food-web" id="food-web">未建立</div>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="checkEcosystem()">检查系统</button>
+                    <button class="btn-secondary" onclick="resetEcosystem()">重置</button>
+                </div>
+            </div>
+
+            <div class="challenge-section">
+                <h3>挑战任务：修复失衡系统</h3>
+                <div class="challenge-card" id="challenge-card">
+                    <p id="challenge-text">点击"生成挑战"开始修复任务</p>
+                    <button class="btn-primary" onclick="generateChallenge()">生成挑战</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二诊室：病例诊断平台 -->
+    <div id="clinic-2" class="clinic-screen screen">
+        <div class="clinic-header">
+            <button class="back-btn" onclick="backToMain()">
+                <i class="ri-arrow-left-line"></i> 返回
+            </button>
+            <h2><i class="ri-stethoscope-line"></i> 第二诊室：病例诊断平台</h2>
+        </div>
+
+        <div class="clinic-content">
+            <div class="case-selector">
+                <h3>选择病例</h3>
+                <div class="case-buttons">
+                    <button class="case-btn active" onclick="loadCase('xinjiang')">
+                        <i class="ri-map-pin-line"></i> 新疆蝗灾诊断
+                    </button>
+                    <button class="case-btn" onclick="loadCase('liaoning')">
+                        <i class="ri-map-pin-line"></i> 辽宁能量循环优化
+                    </button>
+                </div>
+            </div>
+
+            <!-- 新疆案例 -->
+            <div id="case-xinjiang" class="case-content active">
+                <div class="case-header">
+                    <h3>病例：新疆牧鸭治蝗</h3>
+                    <p>通过调节鸭群数量和放牧时间，优化蝗虫防治效果</p>
+                </div>
+
+                <div class="case-controls">
+                    <div class="control-group">
+                        <label>鸭群数量 (只)</label>
+                        <input type="range" id="duck-count" min="100" max="1000" value="500" oninput="updateXinjiangSimulation()">
+                        <span id="duck-count-value">500</span>
+                        <div class="control-chart">
+                            <canvas id="locust-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>放牧时间 (小时/天)</label>
+                        <input type="range" id="grazing-time" min="4" max="12" value="8" oninput="updateXinjiangSimulation()">
+                        <span id="grazing-time-value">8</span>
+                    </div>
+                </div>
+
+                <div class="simulation-result">
+                    <h4>防治效果预测</h4>
+                    <div class="result-metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">蝗虫减少率</div>
+                            <div class="metric-value" id="locust-reduction">--%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">农药残留</div>
+                            <div class="metric-value" id="pesticide-residue">--mg/kg</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">生态效益</div>
+                            <div class="metric-value" id="eco-benefit">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 辽宁案例 -->
+            <div id="case-liaoning" class="case-content">
+                <div class="case-header">
+                    <h3>病例：辽宁四位一体</h3>
+                    <p>优化沼气产量，提升能量循环效率</p>
+                </div>
+
+                <div class="case-controls">
+                    <div class="control-group">
+                        <label>秸秆投入量 (kg)</label>
+                        <input type="range" id="straw-input" min="100" max="500" value="300" oninput="updateLiaoningSimulation()">
+                        <span id="straw-input-value">300</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label>粪便投入量 (kg)</label>
+                        <input type="range" id="manure-input" min="50" max="300" value="150" oninput="updateLiaoningSimulation()">
+                        <span id="manure-input-value">150</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label>发酵温度 (°C)</label>
+                        <input type="range" id="ferment-temp" min="20" max="45" value="35" oninput="updateLiaoningSimulation()">
+                        <span id="ferment-temp-value">35</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label>发酵时间 (天)</label>
+                        <input type="range" id="ferment-time" min="7" max="30" value="15" oninput="updateLiaoningSimulation()">
+                        <span id="ferment-time-value">15</span>
+                    </div>
+                </div>
+
+                <div class="simulation-result">
+                    <h4>效益分析报告</h4>
+                    <div class="result-metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">沼气产量</div>
+                            <div class="metric-value" id="biogas-output">--m³</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">能量效率</div>
+                            <div class="metric-value" id="energy-efficiency">--%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">经济效益</div>
+                            <div class="metric-value" id="economic-benefit">--元</div>
+                        </div>
+                    </div>
+                    <div class="energy-flow-animation" id="energy-flow-viz">
+                        <div class="flow-item">秸秆 →</div>
+                        <div class="flow-item">粪便 →</div>
+                        <div class="flow-item">沼气池 →</div>
+                        <div class="flow-item">能源</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第三诊室：智慧药方设计器 -->
+    <div id="clinic-3" class="clinic-screen screen">
+        <div class="clinic-header">
+            <button class="back-btn" onclick="backToMain()">
+                <i class="ri-arrow-left-line"></i> 返回
+            </button>
+            <h2><i class="ri-flask-line"></i> 第三诊室：智慧药方设计器</h2>
+        </div>
+
+        <div class="clinic-content">
+            <div class="prescription-selector">
+                <h3>选择设计任务</h3>
+                <div class="prescription-buttons">
+                    <button class="prescription-btn active" onclick="loadPrescription('irrigation')">
+                        <i class="ri-drop-line"></i> 新疆节水灌溉
+                    </button>
+                    <button class="prescription-btn" onclick="loadPrescription('hometown')">
+                        <i class="ri-home-line"></i> 家乡问题诊断
+                    </button>
+                </div>
+            </div>
+
+            <!-- 节水灌溉设计 -->
+            <div id="prescription-irrigation" class="prescription-content active">
+                <div class="prescription-header">
+                    <h3>水资源优化设计：新疆节水灌溉</h3>
+                    <p>在网页地图上布置滴灌管网，优化水资源利用</p>
+                </div>
+
+                <div class="irrigation-workspace">
+                    <div class="data-panel">
+                        <h4>环境数据</h4>
+                        <div class="data-item">
+                            <span>年降雨量:</span>
+                            <span>150mm</span>
+                        </div>
+                        <div class="data-item">
+                            <span>土壤湿度:</span>
+                            <span id="soil-moisture">45%</span>
+                        </div>
+                        <div class="data-item">
+                            <span>作物需水量:</span>
+                            <span>800mm/年</span>
+                        </div>
+                    </div>
+
+                    <div class="map-container">
+                        <div class="irrigation-map" id="irrigation-map">
+                            <div class="map-grid"></div>
+                            <div class="map-instructions">点击地图添加滴灌点</div>
+                        </div>
+                    </div>
+
+                    <div class="design-controls">
+                        <h4>设计参数</h4>
+                        <div class="control-group">
+                            <label>滴灌点数量</label>
+                            <input type="number" id="drip-points" value="0" readonly>
+                        </div>
+                        <div class="control-group">
+                            <label>管网密度</label>
+                            <select id="pipe-density" onchange="calculateIrrigation()">
+                                <option value="low">低密度</option>
+                                <option value="medium" selected>中密度</option>
+                                <option value="high">高密度</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="calculateIrrigation()">计算方案</button>
+                    </div>
+                </div>
+
+                <div class="irrigation-result">
+                    <h4>方案评估</h4>
+                    <div class="result-metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">节水率</div>
+                            <div class="metric-value" id="water-saving">--%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">成本节约</div>
+                            <div class="metric-value" id="cost-saving">--元</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">方案评分</div>
+                            <div class="metric-value" id="irrigation-score">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 家乡问题诊断 -->
+            <div id="prescription-hometown" class="prescription-content">
+                <div class="prescription-header">
+                    <h3>家乡问题自主诊断</h3>
+                    <p>输入家乡位置和生态问题，获取解决方案</p>
+                </div>
+
+                <div class="hometown-form">
+                    <div class="form-group">
+                        <label>家乡位置</label>
+                        <input type="text" id="hometown-location" placeholder="例如：广东省珠海市">
+                    </div>
+                    <div class="form-group">
+                        <label>生态问题关键词</label>
+                        <input type="text" id="problem-keywords" placeholder="例如：水污染、土壤退化、生物多样性减少">
+                    </div>
+                    <button class="btn-primary" onclick="searchHometownCase()">搜索案例</button>
+                </div>
+
+                <div class="case-recommendations" id="case-recommendations" style="display: none;">
+                    <h4>相似案例推荐</h4>
+                    <div class="recommendation-list" id="recommendation-list"></div>
+                </div>
+
+                <div class="solution-designer">
+                    <h4>设计修复方案</h4>
+                    <div class="solution-form">
+                        <div class="form-group">
+                            <label>方案名称</label>
+                            <input type="text" id="solution-name" placeholder="例如：生态修复方案">
+                        </div>
+                        <div class="form-group">
+                            <label>主要措施</label>
+                            <textarea id="solution-measures" rows="4" placeholder="描述主要修复措施..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>预期效果</label>
+                            <textarea id="solution-effects" rows="3" placeholder="描述预期达到的效果..."></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="evaluateSolution()">评估方案</button>
+                    </div>
+                </div>
+
+                <div class="solution-result" id="solution-result" style="display: none;">
+                    <h4>方案评估结果</h4>
+                    <div class="result-metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">可行性评分</div>
+                            <div class="metric-value" id="feasibility-score">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">优化建议</div>
+                            <div class="metric-value" id="optimization-tips">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 实时仪表盘 -->
+    <div id="dashboard-screen" class="screen">
+        <div class="clinic-header">
+            <button class="back-btn" onclick="backToMain()">
+                <i class="ri-arrow-left-line"></i> 返回
+            </button>
+            <h2><i class="ri-dashboard-line"></i> 实时数据仪表盘</h2>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>修复的生态系统</h3>
+                    <div class="dashboard-value" id="ecosystems-fixed">0</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>诊断病例准确率</h3>
+                    <div class="dashboard-value" id="diagnosis-accuracy">0%</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>药方设计评分</h3>
+                    <div class="dashboard-value" id="prescription-score">0</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>医师等级</h3>
+                    <div class="dashboard-value" id="doctor-level">见习</div>
+                </div>
+            </div>
+
+            <div class="dashboard-charts">
+                <div class="chart-card">
+                    <h3>能量节约总量</h3>
+                    <canvas id="energy-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>水资源节约量</h3>
+                    <canvas id="water-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>模拟减排数据</h3>
+                    <canvas id="emission-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 报告生成器 -->
+    <div id="report-screen" class="screen">
+        <div class="clinic-header">
+            <button class="back-btn" onclick="backToMain()">
+                <i class="ri-arrow-left-line"></i> 返回
+            </button>
+            <h2><i class="ri-file-list-3-line"></i> 生态医师报告</h2>
+            <button class="btn-primary" onclick="generateReport()">
+                <i class="ri-download-line"></i> 下载报告
+            </button>
+        </div>
+
+        <div class="report-content" id="report-content">
+            <div class="report-header">
+                <h1>生态医师报告</h1>
+                <p id="report-student-info">生态医师：-- | 专长：--</p>
+                <p id="report-date">生成时间：--</p>
+            </div>
+
+            <div class="report-section">
+                <h2>一、学习成果总览</h2>
+                <div class="report-metrics">
+                    <div class="report-metric">
+                        <span class="metric-label">修复的生态系统数量</span>
+                        <span class="metric-value" id="report-ecosystems">0</span>
+                    </div>
+                    <div class="report-metric">
+                        <span class="metric-label">诊断的病例准确率</span>
+                        <span class="metric-value" id="report-accuracy">0%</span>
+                    </div>
+                    <div class="report-metric">
+                        <span class="metric-label">设计的药方评分</span>
+                        <span class="metric-value" id="report-prescription">0</span>
+                    </div>
+                    <div class="report-metric">
+                        <span class="metric-label">系统评定的医师等级</span>
+                        <span class="metric-value" id="report-level">见习</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h2>二、详细数据</h2>
+                <div class="report-data">
+                    <p>能量节约总量：<span id="report-energy">0</span> kWh</p>
+                    <p>水资源节约量：<span id="report-water">0</span> 吨</p>
+                    <p>模拟减排数据：<span id="report-emission">0</span> 吨CO₂</p>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h2>三、学习评价</h2>
+                <div class="report-evaluation" id="report-evaluation">
+                    <p>您是一位优秀的生态医师，在守护家乡绿水青山的道路上不断前行！</p>
+                </div>
+            </div>
+
+            <div class="report-certificate" id="report-certificate">
+                <div class="certificate-content">
+                    <h2>生态医师证书</h2>
+                    <p>授予 <span id="cert-name">--</span></p>
+                    <p>在生态医疗队学习活动中表现优异</p>
+                    <div class="cert-level" id="cert-level">见习医师</div>
+                    <div class="cert-date" id="cert-date">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/EcologicalMedicalTeam/script.js"></script>
 </body>
 
 </html>
