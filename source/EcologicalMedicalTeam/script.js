@@ -628,6 +628,210 @@ function searchHometownCase() {
     document.getElementById('case-recommendations').style.display = 'block';
 }
 
+// ========== AI智能体咨询 ==========
+
+async function consultAI() {
+    const location = document.getElementById('hometown-location').value.trim();
+    const keywords = document.getElementById('problem-keywords').value.trim();
+    
+    if (!location || !keywords) {
+        alert('请先填写家乡位置和生态问题关键词');
+        return;
+    }
+    
+    // 显示AI咨询区域和加载状态
+    const consultationDiv = document.getElementById('ai-consultation');
+    const loadingDiv = document.getElementById('ai-loading');
+    const responseDiv = document.getElementById('ai-response');
+    const consultBtn = document.getElementById('ai-consult-btn');
+    
+    consultationDiv.style.display = 'block';
+    loadingDiv.style.display = 'block';
+    responseDiv.innerHTML = '';
+    consultBtn.disabled = true;
+    consultBtn.innerHTML = '<i class="ri-loader-4-line"></i> 分析中...';
+    
+    // 构建提示词
+    const prompt = `我来自${location}，当地存在以下生态问题：${keywords}。请作为生态医疗队的AI专家，为我提供：
+1. 问题分析：详细分析这些生态问题的成因和影响
+2. 解决方案：提供具体的生态修复方案和措施
+3. 案例参考：推荐类似的成功案例
+4. 实施建议：给出可操作的实施步骤和注意事项
+
+请用专业但易懂的语言回答，并给出实用的建议。`;
+    
+    try {
+        const response = await fetch('https://cgsrmy4z3t.coze.site/stream_run', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImEyYWE1OWJiLTY0ZjUtNDVkYi1hYWMyLTBjYjkwOWZjMzEzYiJ9.eyJpc3MiOiJodHRwczovL2FwaS5jb3plLmNuIiwiYXVkIjpbIkxFVDNBUEtZMkhxeEFCNTQxS3BDN1J2TUZSMUtzeUcwIl0sImV4cCI6ODIxMDI2Njg3Njc5OSwiaWF0IjoxNzY2Nzk4Mzc1LCJzdWIiOiJzcGlmZmU6Ly9hcGkuY296ZS5jbi93b3JrbG9hZF9pZGVudGl0eS9pZDo3NTg4MzM0MDU4MDg2NTk2NjU0Iiwic3JjIjoiaW5ib3VuZF9hdXRoX2FjY2Vzc190b2tlbl9pZDo3NTg4MzQxMjQyMDI3NTczMjYzIn0.UwP7__rNw25iuAofCHvB4m0zbJFxFPJOg7MOlrtLoten_Jo4nTM09DJqfYFdmW_J9JfuF1zpl1qd_6d8kjhdWprd4-8uSTCqpHABHZIppU2AdVLmMHQPa2IQE2j_NxblO3TyauvtuYJMISprEV5MFipviqJFOkHnEE8K8NZ4Oj90Ut-YAY9f11iuDIx5k6_UUgnfz0V4ciKxGZMqUbxiECoXoEA8BTho_oSlNyN3H1t9pPIQH7PZrMV_bpeFlo_ydGuX9Sph3v8uIt1wJxwYcolcypqkkOZEwpp6NNi0uGS6zrH8UsBBdpWwSdKyAxN_DepPb3sGnR476b5D4ptBkw',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: {
+                    query: {
+                        prompt: [
+                            {
+                                type: "text",
+                                content: {
+                                    text: prompt
+                                }
+                            }
+                        ]
+                    }
+                },
+                type: "query",
+                project_id: 7588201109081145354
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // 检查响应类型
+        const contentType = response.headers.get('content-type') || '';
+        let fullResponse = ''; // 在外部声明，确保作用域正确
+        
+        if (contentType.includes('text/event-stream') || contentType.includes('stream')) {
+            // 处理流式响应
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.trim() && line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            // 根据Coze API的实际响应格式解析数据
+                            if (data.content && data.content.text) {
+                                fullResponse += data.content.text;
+                                responseDiv.textContent = fullResponse;
+                            } else if (data.text) {
+                                fullResponse += data.text;
+                                responseDiv.textContent = fullResponse;
+                            } else if (data.message) {
+                                fullResponse += data.message;
+                                responseDiv.textContent = fullResponse;
+                            }
+                        } catch (e) {
+                            // 如果不是JSON，可能是纯文本
+                            const text = line.substring(6).trim();
+                            if (text) {
+                                fullResponse += text;
+                                responseDiv.textContent = fullResponse;
+                            }
+                        }
+                    } else if (line.trim() && !line.startsWith('data: ') && !line.startsWith('event:') && !line.startsWith('id:')) {
+                        // 处理非SSE格式的响应
+                        fullResponse += line + '\n';
+                        responseDiv.textContent = fullResponse;
+                    }
+                }
+            }
+            
+            if (!fullResponse || !fullResponse.trim()) {
+                throw new Error('流式响应为空');
+            }
+        } else {
+            // 处理普通JSON响应
+            const text = await response.text();
+            
+            if (text) {
+                try {
+                    const json = JSON.parse(text);
+                    if (json.content && json.content.text) {
+                        fullResponse = json.content.text;
+                    } else if (json.text) {
+                        fullResponse = json.text;
+                    } else if (json.message) {
+                        fullResponse = json.message;
+                    } else if (json.data && json.data.content) {
+                        fullResponse = json.data.content;
+                    } else {
+                        // 尝试查找任何文本字段
+                        fullResponse = JSON.stringify(json, null, 2);
+                    }
+                } catch (e) {
+                    fullResponse = text;
+                }
+            }
+            
+            if (!fullResponse || !fullResponse.trim()) {
+                throw new Error('响应为空');
+            }
+            
+            responseDiv.textContent = fullResponse;
+        }
+        
+        // 格式化显示
+        if (fullResponse && fullResponse.trim()) {
+            responseDiv.innerHTML = formatAIResponse(fullResponse);
+        } else {
+            responseDiv.innerHTML = '<p style="color: #d32f2f;">未能获取AI响应，请稍后重试。</p>';
+        }
+        
+    } catch (error) {
+        console.error('AI咨询错误:', error);
+        let errorMsg = error.message;
+        
+        // 处理CORS错误
+        if (errorMsg.includes('CORS') || errorMsg.includes('Failed to fetch')) {
+            errorMsg = '跨域请求被阻止。这通常是因为API服务器未设置CORS头。建议：1) 使用后端代理；2) 或联系管理员配置CORS。';
+        }
+        
+        responseDiv.innerHTML = `
+            <div style="padding: 15px; background: #ffebee; border-radius: 8px; border-left: 4px solid #d32f2f;">
+                <p style="color: #d32f2f; font-weight: 600; margin-bottom: 10px;">
+                    <i class="ri-error-warning-line"></i> AI咨询遇到问题
+                </p>
+                <p style="color: #666; margin-bottom: 8px;">${errorMsg}</p>
+                <p style="color: #666; font-size: 0.9rem;">提示：可能是网络问题、API限制或CORS配置问题。请检查网络连接后重试，或联系技术支持。</p>
+            </div>
+        `;
+    } finally {
+        loadingDiv.style.display = 'none';
+        consultBtn.disabled = false;
+        consultBtn.innerHTML = '<i class="ri-robot-line"></i> AI智能诊断';
+    }
+}
+
+// 格式化AI响应，使其更易读
+function formatAIResponse(text) {
+    // 将文本转换为HTML，保留换行和格式
+    let html = text
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // 检测列表格式
+    html = html.replace(/^(\d+\.\s+.*)$/gm, '<li>$1</li>');
+    html = html.replace(/^[-•]\s+(.*)$/gm, '<li>$1</li>');
+    
+    // 检测标题格式
+    html = html.replace(/^(#{1,3})\s+(.*)$/gm, (match, hashes, title) => {
+        const level = hashes.length;
+        return `<h${level + 3}>${title}</h${level + 3}>`;
+    });
+    
+    // 包装段落
+    if (!html.startsWith('<')) {
+        html = '<p>' + html;
+    }
+    if (!html.endsWith('>')) {
+        html = html + '</p>';
+    }
+    
+    return html;
+}
+
 function evaluateSolution() {
     const name = document.getElementById('solution-name').value.trim();
     const measures = document.getElementById('solution-measures').value.trim();

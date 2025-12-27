@@ -357,8 +357,15 @@ layout: false
             <!-- 节水灌溉设计 -->
             <div id="prescription-irrigation" class="prescription-content active">
                 <div class="prescription-header">
-                    <h3>水资源优化设计：新疆节水灌溉</h3>
-                    <p>在网页地图上布置滴灌管网，优化水资源利用</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div>
+                            <h3>水资源优化设计：新疆节水灌溉</h3>
+                            <p>在网页地图上布置滴灌管网，优化水资源利用</p>
+                        </div>
+                        <a href="/EcologicalMedicalTeam/水资源优化设计赛.html" target="_blank" class="external-link-btn">
+                            <i class="ri-external-link-line"></i> 查看详细页面
+                        </a>
+                    </div>
                 </div>
 
                 <div class="irrigation-workspace">
@@ -438,7 +445,24 @@ layout: false
                         <label>生态问题关键词</label>
                         <input type="text" id="problem-keywords" placeholder="例如：水污染、土壤退化、生物多样性减少">
                     </div>
-                    <button class="btn-primary" onclick="searchHometownCase()">搜索案例</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" onclick="searchHometownCase()">
+                            <i class="ri-search-line"></i> 搜索案例
+                        </button>
+                        <button class="btn-primary" onclick="consultAI()" id="ai-consult-btn">
+                            <i class="ri-robot-line"></i> AI智能诊断
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI智能体咨询结果 -->
+                <div class="ai-consultation" id="ai-consultation" style="display: none;">
+                    <h4><i class="ri-robot-line"></i> AI智能诊断结果</h4>
+                    <div class="ai-loading" id="ai-loading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <p>AI正在分析中，请稍候...</p>
+                    </div>
+                    <div class="ai-response" id="ai-response"></div>
                 </div>
 
                 <div class="case-recommendations" id="case-recommendations" style="display: none;">

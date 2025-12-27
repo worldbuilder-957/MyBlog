@@ -839,6 +839,71 @@ html, body {
     border-radius: 12px;
 }
 
+/* AI智能体咨询样式 */
+.ai-consultation {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(74, 155, 95, 0.1), rgba(102, 187, 106, 0.1));
+    border-radius: 12px;
+    border: 2px solid var(--accent);
+}
+
+.ai-consultation h4 {
+    color: var(--accent);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-loading {
+    text-align: center;
+    padding: 20px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(74, 155, 95, 0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ai-response {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    line-height: 1.8;
+    color: var(--text-main);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.ai-response p {
+    margin-bottom: 10px;
+}
+
+.ai-response strong {
+    color: var(--accent);
+}
+
+.ai-response ul, .ai-response ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.ai-response li {
+    margin-bottom: 5px;
+}
+
 /* 仪表盘样式 */
 .dashboard-content {
     background: var(--card-bg);
