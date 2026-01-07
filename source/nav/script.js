@@ -16,9 +16,9 @@ function updateCalendar() {
     // 逻辑：代码会从上往下找，看今天落在哪个区间里
     // 技巧：前一个的 end 最好是后一个 start 的前一天，保证时间连续
     const periods = [
-        { name: 'Spring', start: '2025-02-24', end: '2025-07-06', type: 'term' }, 
-        { name: 'SummerHoliday', start: '2025-07-07', end: '2025-09-14', type: 'vacation' },
-        { name: 'Fall', start: '2025-09-15', end: '2026-01-25', type: 'term' },
+        { name: 'Spring', start: '2026-03-02', end: '2026-07-06', type: 'term' }, 
+        { name: 'SummerHoliday', start: '2025-07-07', end: '2025-09-04', type: 'vacation' },
+        { name: 'Fall', start: '2025-09-05', end: '2026-01-25', type: 'term' },
         { name: 'WinterHoliday', start: '2026-01-26', end: '2026-03-01', type: 'vacation' }
     ];
     // ==============================================================
@@ -389,7 +389,7 @@ renderApps();
 
 // #endregion =================================
 
-// #region 8. 飞书级日历系统逻辑 =========================
+// #region 8. 日历系统逻辑 =========================
 
 let calendarInstance = null; // 保存日历实例
 let currentEventId = null; // 当前编辑的事件ID
@@ -425,7 +425,7 @@ function initCalendarSystem() {
         aspectRatio: 1.8, // 设置宽高比
         editable: true,     // 允许在日历里拖动
         droppable: true,    // ✨ 允许从外部拖进去！
-        plugins: ['rrule'], // 集成RRule插件
+        //plugins: ['rrule'], 理应集成RRule插件，但Gemini说这一行要注释掉
         // 时间网格配置 - 确保时间轴显示
         slotMinTime: '00:00:00', // 最早显示时间
         slotMaxTime: '24:00:00', // 最晚显示时间
