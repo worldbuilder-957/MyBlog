@@ -808,9 +808,10 @@ body {
 .main {
     flex: 1; padding: 20px;
     display: flex; flex-direction: column; gap: 15px;
-    overflow: hidden;                                       /* 防止撑开 */
-    background: rgba(250, 245, 210, 0.888);                     /* 主背景颜色 */
-    min-height: 0;                                        /* 允许 flex 子元素收缩 */
+    overflow: hidden;                                            /* 防止撑开 */
+    height: 100%;                                                /* 强制占满高度 */
+    background: rgba(250, 245, 210, 0.888);                    /* 主背景颜色 */
+    min-height: 0;                                               /* 允许 flex 子元素收缩 */
 }
 
 /* 顶部工具栏 */
@@ -841,7 +842,6 @@ body {
 /* 日历本体美化 (FullCalendar 覆盖样式) */
 #calendar {
     flex: 1;
-    min-height: 600px;                   /* 确保最小高度 */
     background: rgba(253, 252, 252, 0.8);
     border-radius: 12px;
     padding: 15px;

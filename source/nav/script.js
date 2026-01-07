@@ -205,7 +205,8 @@ function closeTaskModal() { modal.close(); }
 renderTodos();
 // #endregion ================================================================= 
 
-// #region 4. 天气功能 (通过API接入和风天气)==============================================
+// #region 4. 天气功能==============================================
+// 该模块通过API接入和风天气，获取珠海当前天气信息，并更新页面显示
 async function fetchWeather() {
     const apiKey = '4dce09f66f4c46c1a5d5f631f019290e'; // 这里填和风天气的 apiKey
     const locationID = '101280701'; // 珠海的ID
@@ -421,7 +422,7 @@ function initCalendarSystem() {
         },
         locale: 'zh-cn',
         firstDay: 1, // 周一开头
-        height: 'auto', // 改为 auto 以自适应容器
+        height: '100%', // 自适应高度
         aspectRatio: 1.8, // 设置宽高比
         editable: true,     // 允许在日历里拖动
         droppable: true,    // ✨ 允许从外部拖进去！
