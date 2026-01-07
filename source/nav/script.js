@@ -317,6 +317,8 @@ if ('serviceWorker' in navigator) {
     deferredPrompt = null;
     console.log('PWA 已安装');
   });
+
+  navigator.serviceWorker.register('/nav/sw.js', { scope: '/nav/' })
 // #endregion ================================================================= 
 
 // #region 6. 股票模块 (新浪静态图版) =========================
