@@ -276,9 +276,6 @@ if ('serviceWorker' in navigator) {
     e.preventDefault();
     // 把事件存起来，等会儿用户点击按钮时再用
     deferredPrompt = e;
-    // 把我们的自定义按钮显示出来
-    installBtn.style.display = 'block';
-    console.log('捕捉到安装事件，按钮已显示');
 
   // === 新增：检测设备类型 ===
     // 检查 UserAgent 字符串里是否包含 "Mobile" 或 "Android" 等关键词
@@ -289,6 +286,7 @@ if ('serviceWorker' in navigator) {
         installBtn.style.display = 'block';
         console.log('检测到移动设备，显示安装按钮');
     } else {
+        installBtn.style.display = 'none';
         console.log('检测到桌面端，隐藏安装按钮');
     }
     // ==================================
