@@ -849,18 +849,6 @@ body {
     overflow: hidden;                    /* 防止内容溢出 */
 }
 
-/* 确保 FullCalendar 容器有正确的高度 */
-#calendar .fc {
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-#calendar .fc-view-harness {
-    min-height: 600px !important;
-    flex: 1 !important;
-}
-
 /* 确保时间网格视图的容器可见 */
 #calendar .fc-timeGrid-view .fc-scroller {
     overflow-y: auto !important;
@@ -961,34 +949,6 @@ body {
     background: rgba(107, 114, 128, 0.2) !important;
 }
 
-/* 确保日历视图正常显示 */
-.fc-scroller {
-    overflow-y: auto !important;
-}
-
-.fc-scroller-liquid-absolute {
-    position: relative !important;
-}
-
-/* 月视图优化 */
-.fc-dayGridMonth-view .fc-daygrid-day {
-    min-height: 100px;
-}
-
-/* 时间网格视图优化 */
-.fc-timeGrid-view {
-    display: block !important;
-}
-
-.fc-timeGrid-view .fc-timegrid-body {
-    min-height: 400px !important;
-}
-
-.fc-timeGrid-view .fc-timegrid-slot {
-    min-height: 2.5em !important;
-    height: 2.5em !important;
-}
-
 /* 确保时间轴列可见 */
 .fc-timegrid-axis {
     width: 60px !important;
@@ -1016,7 +976,6 @@ body {
 @media (max-width: 768px) {
     #calendar {
         padding: 10px;
-        min-height: 400px;
     }
     
     .fc-toolbar {
@@ -1030,7 +989,7 @@ body {
     }
 }
 
-/* 日程编辑模态框样式 */
+/* #region --- 日程编辑模态框样式 --- */
 .modal {
     border: none;
     border-radius: 16px;
@@ -1084,7 +1043,7 @@ body {
     padding: 10px;
     border: 1px solid rgba(100, 105, 115, 0.5);
     border-radius: 8px;
-    background: rgba(74, 79, 91, 0.8);
+    background: rgba(250, 250, 251, 0.8);
     color: var(--text-main);
     outline: none;
 }
@@ -1128,4 +1087,5 @@ body {
 .btn.secondary:hover {
     background: rgba(84, 89, 102, 0.9);
 }
+/* #endregion */
 /* #endregion */
