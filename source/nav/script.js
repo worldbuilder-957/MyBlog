@@ -1,3 +1,89 @@
+// #region 0. 云同步核心配置 (JSONBin) =========================
+const BIN_CONFIG = {
+    // ⚠️ 请替换为你自己的 ID 和 Key
+    binId: '695f5812ae596e708fccfb72',
+    url: 'https://api.jsonbin.io/v3/b/'
+};
+
+// 获取 Key 的逻辑
+function getApiKey() {
+    let key = localStorage.getItem('jsonbin_key');
+    if (!key) {
+        key = prompt("请输入 JSONBin API Key 以开启云同步：");
+        if (key) localStorage.setItem('jsonbin_key', key);
+    }
+    return key;
+}
+
+// 在 fetch 请求里使用 getApiKey()
+// headers: { 'X-Master-Key': getApiKey() }
+
+// 📥 从云端拉取数据 (读档)
+async function loadFromCloud() {
+    console.log('正在从云端同步数据...');
+    try {
+        const response = await fetch(`${BIN_CONFIG.url}${BIN_CONFIG.binId}/latest`, {
+            method: 'GET',
+            headers: {
+                'X-Master-Key': BIN_CONFIG.apiKey
+            }
+        });
+        
+        if (!response.ok) throw new Error('云端连接失败');
+        
+        const result = await response.json();
+        const cloudData = result.record; // JSONBin 的数据包裹在 record 里
+
+        // 覆盖本地数据
+        if (cloudData.myRichTodos) {
+            localStorage.setItem('myRichTodos', JSON.stringify(cloudData.myRichTodos));
+        }
+        if (cloudData.calendarEvents) {
+            localStorage.setItem('calendarEvents', JSON.stringify(cloudData.calendarEvents));
+        }
+        
+        // 刷新页面显示
+        renderTodos();
+        refreshCalendarData();
+        alert('☁️ 云端数据同步成功！');
+        
+    } catch (error) {
+        console.error('同步失败:', error);
+        alert('❌ 同步失败，请检查网络或配置');
+    }
+}
+
+// 📤 推送到云端 (存档)
+async function saveToCloud() {
+    console.log('正在保存到云端...');
+    
+    // 收集所有要存的数据
+    const payload = {
+        myRichTodos: JSON.parse(localStorage.getItem('myRichTodos') || '[]'),
+        calendarEvents: JSON.parse(localStorage.getItem('calendarEvents') || '[]'),
+        // 你还可以把搜索引擎偏好也存进去
+        preferredEngine: localStorage.getItem('preferredEngine') || 'google'
+    };
+
+    try {
+        const response = await fetch(`${BIN_CONFIG.url}${BIN_CONFIG.binId}`, {
+            method: 'PUT', // 更新模式
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': BIN_CONFIG.apiKey
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('保存失败');
+        console.log('✅ 云端保存成功');
+        
+    } catch (error) {
+        console.error('保存失败:', error);
+    }
+}
+// #endregion =================================================
+
 // #region 1. 时钟功能模块=======================================================
 function updateTime() {
     const now = new Date();
@@ -189,6 +275,7 @@ function deleteTodo(id) {
 function saveAndRender() {
     localStorage.setItem('myRichTodos', JSON.stringify(todos));
     renderTodos(document.getElementById('todoSearch').value);
+    saveToCloud();
 }
 
 // 搜索监听
@@ -616,6 +703,8 @@ function updateTodoDate(id, dateStr) {
         localStorage.setItem('myRichTodos', JSON.stringify(todos));
         // 同时也刷新首页的Bento卡片
         if(typeof renderTodos === 'function') renderTodos();
+        // 👇 新增这一行
+        saveToCloud();
     }
 }
 
@@ -862,6 +951,9 @@ function saveEvent() {
         
         // 关闭模态框
         closeEventModal();
+
+        // 👇 新增这一行：自动上传
+        saveToCloud();
         
         console.log('事件保存成功:', eventData);
     } catch (error) {
@@ -957,3 +1049,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // #endregion
+
+// #region 10. 自动启动项 =========================
+// 页面加载 1 秒后尝试自动从云端拉取数据
+setTimeout(() => {
+    // 确保 loadFromCloud 函数存在（防止报错）
+    if (typeof loadFromCloud === 'function') {
+        loadFromCloud();
+    }
+}, 1000);
+// #endregion ====================================

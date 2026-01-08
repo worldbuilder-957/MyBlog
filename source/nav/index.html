@@ -61,9 +61,14 @@ layout: false
                 <div style="display:flex; align-items:center; gap:8px;">
                     <i class="ri-kanban-view"></i> Task List
                 </div>
-                <button class="icon-btn" onclick="openTaskModal()">
-                    <i class="ri-add-line"></i>
-                </button>
+                <div style="margin-left: auto; display: flex; gap: 5px;">
+                    <button class="icon-btn" onclick="loadFromCloud()" title="从云端拉取数据">
+                        <i class="ri-cloud-download-line"></i>
+                    </button>
+                    <button class="icon-btn" onclick="openTaskModal()">
+                        <i class="ri-add-line"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="todo-filter">
