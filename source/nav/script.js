@@ -16,7 +16,6 @@ function getApiKey() {
 }
 
 // 在 fetch 请求里使用 getApiKey()
-// headers: { 'X-Master-Key': getApiKey() }
 
 // 📥 从云端拉取数据 (读档)
 async function loadFromCloud() {
@@ -25,7 +24,7 @@ async function loadFromCloud() {
         const response = await fetch(`${BIN_CONFIG.url}${BIN_CONFIG.binId}/latest`, {
             method: 'GET',
             headers: {
-                'X-Master-Key': BIN_CONFIG.apiKey
+                'X-Master-Key': getApiKey()
             }
         });
         
@@ -70,7 +69,7 @@ async function saveToCloud() {
             method: 'PUT', // 更新模式
             headers: {
                 'Content-Type': 'application/json',
-                'X-Master-Key': BIN_CONFIG.apiKey
+                'X-Master-Key': getApiKey()
             },
             body: JSON.stringify(payload)
         });
