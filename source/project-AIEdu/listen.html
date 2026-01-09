@@ -75,6 +75,22 @@ layout: false
             background: #ff85ad;
             text-decoration: none;
         }
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #eee;
+            border-radius: 30px;
+            outline: none;
+            transition: all 0.3s;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+        }
+        .search-input:focus {
+            border-color: #3498db;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -91,6 +107,11 @@ layout: false
             <div class="subpage-section">
                 <h3>功能介绍</h3>
                 <p>本模块提供专业的地理教学播客或视频资源，由资深地理教师和教育专家录制，涵盖地球运动、昼夜交替、四季变化等自然现象的科学原理和教学方法指导。</p>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>搜索资源</h3>
+                <input type="text" id="searchInput" class="search-input" placeholder="输入关键词搜索视频（如：四季、公转、星空...）">
             </div>
             
             <div class="subpage-section">
@@ -174,5 +195,24 @@ layout: false
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const items = document.querySelectorAll('.podcast-item');
+
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase().trim();
+
+                items.forEach(item => {
+                    const content = item.textContent.toLowerCase();
+                    if (content.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

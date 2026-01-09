@@ -257,6 +257,40 @@ layout: false
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
         }
+        .role-selection-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 40px;
+            margin: 20px 0;
+            border-left: 4px solid #9b59b6;
+            text-align: center;
+        }
+        .role-cards {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .role-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            width: 250px;
+            border: 2px solid transparent;
+        }
+        .role-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #9b59b6;
+        }
+        .role-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -279,14 +313,28 @@ layout: false
             </div>
             
             <div class="subpage-section">
-                <h3>AI智能对话</h3>
-                <div class="chat-container">
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="message ai">
-                            <div class="message-content">
-                                你好！我是你的AI地理研讨助手。今天我们可以讨论地球自转与昼夜交替的关系，你有什么想法吗？
-                            </div>
+                <h3>AI智能对话 - 身份选择</h3>
+                
+                <!-- 身份选择界面 -->
+                <div id="roleSelection" class="role-selection-container">
+                    <h3>请选择您的身份以开始对话</h3>
+                    <div class="role-cards">
+                        <div class="role-card" onclick="selectRole('student')">
+                            <div class="role-icon">🎓</div>
+                            <h4>我是学生</h4>
+                            <p>探索地球奥秘，解答学习疑惑</p>
                         </div>
+                        <div class="role-card" onclick="selectRole('teacher')">
+                            <div class="role-icon">👩‍🏫</div>
+                            <h4>我是老师</h4>
+                            <p>获取备课资源，设计教学活动</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 聊天界面 (初始隐藏) -->
+                <div id="chatContainer" class="chat-container" style="display: none;">
+                    <div class="chat-messages" id="chatMessages">
                     </div>
                     <div class="chat-input-container">
                         <input type="text" class="chat-input" id="chatInput" placeholder="输入你的问题或想法..." />
@@ -326,7 +374,8 @@ layout: false
         // DeepSeek API 配置（请自行补充）
         const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'; // 请填写 DeepSeek API 接口地址
         const DEEPSEEK_API_KEY = 'sk-64e582e67c9e4f7b89e67602b6670c4d'; // 请填写你的 API Key
-        const SYSTEM_PROMPT = `# Role: 地球科学探索向导
+        
+        const STUDENT_PROMPT = `# Role: 地球科学探索向导
 
 ## 1. 角色定位
 你是一位逻辑清晰、知识渊博且善于引导的“地球科学探索向导”。
@@ -383,7 +432,32 @@ layout: false
 记住口诀：**自转生昼夜，公转生四季。**
 
 ---
-**好了，小科学家，请提出你的科学疑问吧！**`; // 请填写系统提示词，例如："你是一位专业的地理教师，擅长讲解地球运动、昼夜交替、四季变化等自然现象。"
+**好了，小科学家，请提出你的科学疑问吧！**`;
+
+        const TEACHER_PROMPT = `# Role: 初中地理备课助手
+
+## 1. 角色定位
+你是一位经验丰富、教学理念先进的初中地理教研员。
+你的服务对象是**初中地理教师**。
+你的任务是协助老师进行《地球的运动》单元备课，提供教学设计灵感、重难点突破策略、课堂活动方案及习题设计建议。
+
+## 2. 核心原则
+- **符合课标**：依据《义务教育地理课程标准（2022年版）》，注重核心素养（人地协调观、综合思维、区域认知、地理实践力）的培养。
+- **实操性强**：提供的教学活动要适合初中课堂（40-45分钟），考虑学情（初一学生空间思维尚在发展中）。
+- **结构清晰**：输出内容要有条理，便于老师直接引用或修改。
+
+## 3. 功能方向
+当老师提问时，你可以从以下角度提供支持：
+- **教学设计**：导入环节设计、板书设计、教学流程规划。
+- **难点突破**：如何用直观教具或生活实例解释“恒星日与太阳日”、“黄赤交角”等难点。
+- **活动创意**：设计“模拟地球公转”、“测量影长”等探究实践活动。
+- **习题解析**：分析典型考题的命题思路和解题技巧。
+
+## 4. 风格要求
+- 专业、高效、富有教学智慧。
+- 回答结构化，便于阅读。`;
+
+        let SYSTEM_PROMPT = ''; // 将根据用户选择进行设置
 
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
@@ -397,12 +471,43 @@ layout: false
             }
         });
 
+        // 角色选择函数
+        function selectRole(role) {
+            const roleSelection = document.getElementById('roleSelection');
+            const chatContainer = document.getElementById('chatContainer');
+            const chatMessages = document.getElementById('chatMessages');
+
+            if (role === 'student') {
+                SYSTEM_PROMPT = STUDENT_PROMPT;
+                // 设置学生角色的欢迎语
+                chatMessages.innerHTML = `
+                    <div class="message ai">
+                        <div class="message-content">
+                            你好！我是你的AI地理研讨助手。今天我们可以讨论地球自转与昼夜交替的关系，你有什么想法吗？
+                        </div>
+                    </div>`;
+            } else if (role === 'teacher') {
+                SYSTEM_PROMPT = TEACHER_PROMPT;
+                // 设置老师角色的欢迎语
+                chatMessages.innerHTML = `
+                    <div class="message ai">
+                        <div class="message-content">
+                            老师您好！我是您的地理备课助手。我可以为您提供《地球的运动》单元的教学设计建议、难点突破方案或探究活动创意。请告诉我您需要准备哪部分内容？
+                        </div>
+                    </div>`;
+            }
+
+            // 切换界面显示
+            roleSelection.style.display = 'none';
+            chatContainer.style.display = 'flex';
+        }
+
         // 发送消息函数
         async function sendMessage() {
             const message = chatInput.value.trim();
             if (!message) return;
 
-            // 禁用输入和按钮
+            // 禁用输入和按钮，防止重复提交
             chatInput.disabled = true;
             sendButton.disabled = true;
 
@@ -410,24 +515,43 @@ layout: false
             addMessage('user', message);
             chatInput.value = '';
 
-            // 显示加载状态
-            const loadingId = addMessage('ai', '<div class="loading"></div>', true);
+            // 创建AI消息容器（初始显示加载动画）
+            const aiMessageDiv = addMessage('ai', '<div class="loading"></div>', true);
+            const contentDiv = aiMessageDiv.querySelector('.message-content');
+            
+            let fullContent = '';
+            let isFirstChunk = true;
 
             try {
-                // 调用 DeepSeek API
-                const response = await callDeepSeekAPI(message);
-                
-                // 移除加载状态
-                removeMessage(loadingId);
-                
-                // 显示AI回复
-                addMessage('ai', response);
+                // 调用流式 API
+                await callDeepSeekAPIStream(message, (chunk) => {
+                    if (isFirstChunk) {
+                        contentDiv.innerHTML = ''; // 清除加载动画
+                        contentDiv.classList.add('markdown'); // 确保应用Markdown样式
+                        isFirstChunk = false;
+                    }
+                    fullContent += chunk;
+                    // 实时渲染 Markdown
+                    if (typeof marked !== 'undefined') {
+                        contentDiv.innerHTML = marked.parse(fullContent);
+                    } else {
+                        contentDiv.textContent = fullContent;
+                    }
+                    // 滚动到底部
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                });
             } catch (error) {
-                // 移除加载状态
-                removeMessage(loadingId);
-                
-                // 显示错误消息
-                addMessage('ai', '抱歉，发生了错误：' + error.message);
+                // 如果出错且未开始输出，显示错误信息
+                if (isFirstChunk) {
+                    contentDiv.innerHTML = '抱歉，发生了错误：' + error.message;
+                } else {
+                    // 如果已经输出了一部分，追加错误提示
+                    const errorP = document.createElement('p');
+                    errorP.style.color = '#ff6b6b';
+                    errorP.style.fontSize = '0.9em';
+                    errorP.textContent = '(连接中断: ' + error.message + ')';
+                    contentDiv.appendChild(errorP);
+                }
                 console.error('API调用错误:', error);
             } finally {
                 // 恢复输入和按钮
@@ -478,23 +602,36 @@ layout: false
             }
         }
 
-        // 调用 DeepSeek API
-        async function callDeepSeekAPI(userMessage) {
+        // 调用 DeepSeek API (流式输出)
+        async function callDeepSeekAPIStream(userMessage, onChunk) {
             // 检查配置是否完整
             if (!DEEPSEEK_API_URL || !DEEPSEEK_API_KEY) {
                 throw new Error('请先配置 DeepSeek API URL 和 API Key');
             }
 
+            // 获取历史记录
+            const history = getChatHistory();
+            
+            // 构建消息列表
+            // 注意：sendMessage 中已经将 userMessage 添加到了 DOM，所以 getChatHistory 应该已经包含了它。
+            // 为了避免重复，我们检查 history 的最后一条。如果最后一条不是 userMessage，说明 DOM 更新可能有延迟或被过滤，此时才手动添加。
+            const messages = [...(SYSTEM_PROMPT ? [{ role: 'system', content: SYSTEM_PROMPT }] : [])];
+            
+            const lastHistoryMsg = history.length > 0 ? history[history.length - 1] : null;
+            if (lastHistoryMsg && lastHistoryMsg.role === 'user' && lastHistoryMsg.content === userMessage) {
+                messages.push(...history);
+            } else {
+                messages.push(...history);
+                messages.push({ role: 'user', content: userMessage });
+            }
+
             // 构建请求体
             const requestBody = {
                 model: 'deepseek-chat', // 根据实际模型名称调整
-                messages: [
-                    ...(SYSTEM_PROMPT ? [{ role: 'system', content: SYSTEM_PROMPT }] : []),
-                    ...getChatHistory(),
-                    { role: 'user', content: userMessage }
-                ],
+                messages: messages,
                 temperature: 0.7,
-                max_tokens: 2000
+                max_tokens: 2000,
+                stream: true // 开启流式输出
             };
 
             // 发送请求
@@ -512,13 +649,36 @@ layout: false
                 throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
             }
 
-            const data = await response.json();
-            
-            // 提取AI回复内容
-            if (data.choices && data.choices[0] && data.choices[0].message) {
-                return data.choices[0].message.content;
-            } else {
-                throw new Error('API返回格式异常');
+            // 处理流式响应
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // 保留最后一行可能不完整的数据
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    if (trimmed.startsWith('data: ')) {
+                        const dataStr = trimmed.slice(6);
+                        if (dataStr === '[DONE]') return;
+                        try {
+                            const data = JSON.parse(dataStr);
+                            const content = data.choices[0]?.delta?.content || '';
+                            if (content) {
+                                onChunk(content);
+                            }
+                        } catch (e) {
+                            console.error('Error parsing stream chunk:', e);
+                        }
+                    }
+                }
             }
         }
 
