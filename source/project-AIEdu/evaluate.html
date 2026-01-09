@@ -96,6 +96,67 @@ layout: false
             color: #666;
             font-size: 14px;
         }
+        /* 角色选择样式 */
+        .role-selection-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 40px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+            text-align: center;
+        }
+        .role-cards {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .role-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            width: 250px;
+            border: 2px solid transparent;
+        }
+        .role-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #f39c12;
+        }
+        .role-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        /* 教师端表格样式 */
+        .teacher-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .teacher-table th, .teacher-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .teacher-table th {
+            background: #f39c12;
+            color: white;
+        }
+        .status-tag {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: white;
+        }
+        .status-excellent { background: #2ecc71; }
+        .status-warning { background: #e74c3c; }
     </style>
 </head>
 <body>
@@ -114,8 +175,27 @@ layout: false
                 <p>本模块运用AI智能评价系统，对学生的学习过程和地理知识掌握情况进行深度评估和反馈。系统通过分析学生的答题情况、讨论参与度和探究活动表现，生成个性化的学习报告和改进建议。</p>
             </div>
             
-            <div class="subpage-section">
-                <h3>评价指标</h3>
+            <!-- 身份选择界面 -->
+            <div id="roleSelection" class="role-selection-container">
+                <h3>请选择您的身份以查看报告</h3>
+                <div class="role-cards">
+                    <div class="role-card" onclick="selectRole('student')">
+                        <div class="role-icon">🎓</div>
+                        <h4>我是学生</h4>
+                        <p>查看个人学习进度与能力评估</p>
+                    </div>
+                    <div class="role-card" onclick="selectRole('teacher')">
+                        <div class="role-icon">👩‍🏫</div>
+                        <h4>我是老师</h4>
+                        <p>查看全班学情分析与教学建议</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学生视图 (初始隐藏) -->
+            <div id="studentView" style="display: none;">
+                <div class="subpage-section">
+                    <h3>评价指标 (个人)</h3>
                 <div class="evaluation-metrics">
                     <div class="metric-card">
                         <div class="metric-value">85%</div>
@@ -134,10 +214,10 @@ layout: false
                         <div class="metric-label">知识应用能力</div>
                     </div>
                 </div>
-            </div>
+                </div>
             
-            <div class="subpage-section">
-                <h3>学习报告示例</h3>
+                <div class="subpage-section">
+                    <h3>学习报告示例</h3>
                 <div class="evaluation-dashboard">
                     <h3>学习进度</h3>
                     <div class="evaluation-item">
@@ -168,10 +248,10 @@ layout: false
                         </div>
                     </div>
                 </div>
-            </div>
+                </div>
             
-            <div class="subpage-section">
-                <h3>智能反馈示例</h3>
+                <div class="subpage-section">
+                    <h3>智能反馈示例</h3>
                 <div class="evaluation-dashboard">
                     <h4>个性化建议</h4>
                     <ul style="color: #666; line-height: 1.8; margin-left: 20px;">
@@ -180,16 +260,103 @@ layout: false
                         <li>在探究活动中，可以尝试从多个角度分析地理现象，提升分析的全面性</li>
                     </ul>
                 </div>
-            </div>
+                </div>
             
-            <div class="subpage-section">
-                <h3>使用建议</h3>
+                <div class="subpage-section">
+                    <h3>使用建议</h3>
                 <p>1. 定期查看学习报告，了解自己的学习进度和薄弱环节</p>
                 <p>2. 认真阅读智能反馈，按照建议调整学习策略</p>
                 <p>3. 结合其他模块的学习，全面提升自己的地理科学素养</p>
                 <p>4. 与老师和同学分享评价结果，共同探讨改进方法</p>
+                </div>
+            </div>
+
+            <!-- 教师视图 (初始隐藏) -->
+            <div id="teacherView" style="display: none;">
+                <div class="subpage-section">
+                    <h3>全班学情概览</h3>
+                    <div class="evaluation-metrics">
+                        <div class="metric-card">
+                            <div class="metric-value">42</div>
+                            <div class="metric-label">班级总人数</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">82.5</div>
+                            <div class="metric-label">平均综合得分</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">95%</div>
+                            <div class="metric-label">作业完成率</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">5</div>
+                            <div class="metric-label">待关注学生</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="subpage-section">
+                    <h3>知识点掌握分布</h3>
+                    <div class="evaluation-dashboard">
+                        <div class="evaluation-item">
+                            <span>地球自转原理</span>
+                            <div style="width: 200px;">
+                                <div class="progress-bar"><div class="progress-fill" style="width: 90%;"></div></div>
+                                <span style="font-size: 12px; color: #666;">90% (优秀)</span>
+                            </div>
+                        </div>
+                        <div class="evaluation-item">
+                            <span>地球公转与四季</span>
+                            <div style="width: 200px;">
+                                <div class="progress-bar"><div class="progress-fill" style="width: 65%; background: #e74c3c;"></div></div>
+                                <span style="font-size: 12px; color: #666;">65% (需强化)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="subpage-section">
+                    <h3>学生详情列表 (部分)</h3>
+                    <table class="teacher-table">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>综合得分</th>
+                                <th>薄弱环节</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>张小明</td>
+                                <td>92</td>
+                                <td>无</td>
+                                <td><span class="status-tag status-excellent">优秀</span></td>
+                            </tr>
+                            <tr>
+                                <td>李华</td>
+                                <td>68</td>
+                                <td>四季成因分析</td>
+                                <td><span class="status-tag status-warning">需关注</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+    <script>
+        function selectRole(role) {
+            // 隐藏选择界面
+            document.getElementById('roleSelection').style.display = 'none';
+            
+            // 根据选择显示对应视图
+            if (role === 'student') {
+                document.getElementById('studentView').style.display = 'block';
+            } else {
+                document.getElementById('teacherView').style.display = 'block';
+            }
+        }
+    </script>
 </body>
 </html>

@@ -211,15 +211,38 @@ layout: false
             <div class="subpage-section">
                 <h3>AI 智能出题</h3>
                 <p>本页面已接入AI模型，每次进入或点击“刷新习题”都会生成一套全新的地理练习题。作答后可立即查看正确答案与解析。</p>
-                <button id="refresh-question-btn" class="btn-refresh">🔄 刷新习题（一次生成 3 道）</button>
-                <div id="ai-question-area" class="question-list">
-                    <div class="question-container">
-                        <div class="question-number">题目加载中...</div>
-                        <div class="question-text">正在向 AI 请求题目，请稍候。</div>
+                
+                <div style="margin-bottom: 15px;">
+                    <button id="refresh-question-btn" class="btn-refresh">🔄 刷新习题（一次生成 3 道）</button>
+                    <button id="view-mistakes-btn" class="btn-refresh" style="background: #e74c3c; margin-left: 10px;">📕 我的错题本</button>
+                </div>
+
+                <div id="practice-view">
+                    <div id="ai-question-area" class="question-list">
+                        <div class="question-container">
+                            <div class="question-number">题目加载中...</div>
+                            <div class="question-text">正在向 AI 请求题目，请稍候。</div>
+                        </div>
+                    </div>
+                    <div id="quiz-stats" class="quiz-stats">
+                        本次出题 0 道，答对 0 道。请开始作答吧！
                     </div>
                 </div>
-                <div id="quiz-stats" class="quiz-stats">
-                    本次出题 0 道，答对 0 道。请开始作答吧！
+
+                <div id="mistake-view" style="display: none;">
+                    <div class="question-container" style="border-left-color: #e74c3c; background: #fff5f5;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                            <h4 style="margin: 0; color: #c0392b;">错题记录</h4>
+                            <div>
+                                <button id="export-pdf-btn" class="btn-refresh" style="background: #8e44ad; font-size: 12px; padding: 5px 10px; margin-bottom: 0;">🖨️ 导出PDF</button>
+                                <button id="clear-mistakes-btn" class="btn-refresh" style="background: #95a5a6; font-size: 12px; padding: 5px 10px; margin-bottom: 0;">🗑️ 清空</button>
+                                <button id="back-to-practice-btn" class="btn-refresh" style="background: #3498db; font-size: 12px; padding: 5px 10px; margin-bottom: 0;">🔙 返回练习</button>
+                            </div>
+                        </div>
+                        <div id="mistake-list" class="question-list">
+                            <!-- 错题列表将在这里渲染 -->
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -232,197 +255,6 @@ layout: false
             </div>
         </div>
     </div>
-    <script>
-        (function () {
-            const refreshBtn = document.getElementById('refresh-question-btn');
-            const questionArea = document.getElementById('ai-question-area');
-            const statsEl = document.getElementById('quiz-stats');
-
-            let totalQuestions = 0;
-            let correctAnswers = 0;
-            let currentQuestions = [];
-
-            function updateStats() {
-                if (totalQuestions === 0) {
-                    statsEl.textContent = '本次出题 0 道，答对 0 道。请开始作答吧！';
-                    return;
-                }
-                const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
-                let comment = '';
-                if (accuracy === 100) {
-                    comment = '太棒了！满分表现，继续保持！';
-                } else if (accuracy >= 80) {
-                    comment = '表现不错，再接再厉，可以冲击满分！';
-                } else if (accuracy >= 50) {
-                    comment = '已经有一定掌握，多练几道会更熟练。';
-                } else {
-                    comment = '先别灰心，再多做几道题巩固一下基础知识。';
-                }
-                statsEl.textContent = `本次出题 ${totalQuestions} 道，答对 ${correctAnswers} 道（正确率 ${accuracy}%）。${comment}`;
-            }
-
-            function renderQuestions(questions) {
-                currentQuestions = questions.map(q => ({
-                    ...q,
-                    answered: false
-                }));
-
-                if (!questionArea) return;
-
-                questionArea.innerHTML = '';
-
-                currentQuestions.forEach((q, qIndex) => {
-                    const container = document.createElement('div');
-                    container.className = 'question-container';
-                    container.setAttribute('data-q-index', String(qIndex));
-
-                    const optionsHtml = (q.options || []).map((opt, idx) =>
-                        `<button class="option-button" data-index="${idx}">${String.fromCharCode(65 + idx)}. ${opt}</button>`
-                    ).join('');
-
-                    container.innerHTML = `
-                        <div class="question-number">题目 ${qIndex + 1}：单选题</div>
-                        <div class="question-text">${q.question || '（题目内容加载失败）'}</div>
-                        <div class="option-list">
-                            ${optionsHtml || '<p>选项加载失败，请点击“刷新习题”重试。</p>'}
-                        </div>
-                        <div class="answer-explanation" style="display:none;"></div>
-                    `;
-
-                    const buttons = container.querySelectorAll('.option-button');
-                    const explanationEl = container.querySelector('.answer-explanation');
-
-                    buttons.forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const index = Number(btn.getAttribute('data-index'));
-                            handleAnswer(qIndex, index, container, buttons, explanationEl);
-                        });
-                    });
-
-                    questionArea.appendChild(container);
-                });
-            }
-
-            function handleAnswer(qIndex, selectedIndex, container, buttons, explanationEl) {
-                const q = currentQuestions[qIndex];
-                if (!q || q.answered) return;
-                currentQuestions[qIndex].answered = true;
-
-                const correctIndex = Number(q.correctIndex);
-
-                buttons.forEach(btn => {
-                    const idx = Number(btn.getAttribute('data-index'));
-                    btn.disabled = true;
-                    if (idx === correctIndex) {
-                        btn.classList.add('correct');
-                    }
-                });
-
-                let isCorrect = selectedIndex === correctIndex;
-                if (!isCorrect && buttons[selectedIndex]) {
-                    buttons[selectedIndex].classList.add('incorrect');
-                }
-
-                totalQuestions++;
-                if (isCorrect) {
-                    correctAnswers++;
-                }
-
-                const correctLabel = typeof correctIndex === 'number'
-                    ? String.fromCharCode(65 + correctIndex)
-                    : '（未知）';
-                const explanation = q.explanation || '暂时没有提供解析，请根据所学知识自行思考。';
-
-                if (explanationEl) {
-                    explanationEl.style.display = 'block';
-                    explanationEl.innerHTML = `
-                        <p><strong>${isCorrect ? '✅ 回答正确！' : '❌ 回答错误。'}</strong></p>
-                        <p><strong>正确答案：</strong>${correctLabel}</p>
-                        <p><strong>解析：</strong>${explanation}</p>
-                    `;
-                }
-
-                updateStats();
-            }
-
-            async function fetchQuestionFromDeepSeek() {
-                if (!refreshBtn || !questionArea) return;
-                refreshBtn.disabled = true;
-                questionArea.innerHTML = `
-                    <div class="question-container">
-                        <div class="question-number">题目加载中...</div>
-                        <div class="question-text">正在出题，请稍候。</div>
-                    </div>
-                `;
-
-                try {
-                    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            // TODO: 将下方占位符替换为您自己的 DeepSeek API Key，格式保持为 Bearer YOUR_KEY。
-                            // 注意：在正式生产环境中，不建议直接在前端暴露密钥。
-                            'Authorization': 'Bearer sk-64e582e67c9e4f7b89e67602b6670c4d'
-                        },
-                        body: JSON.stringify({
-                            model: 'deepseek-chat',
-                            messages: [
-                                {
-                                    role: 'system',
-                                    content: '你是一名初中地理老师，善于根据课程内容出规范的选择题，并用简明清晰的语言给出解析。'
-                                },
-                                {
-                                    role: 'user',
-                                    content: '请你一次出 3 道与地球自转、公转、昼夜交替或四季变化相关的地理单选题，整体返回一个 JSON 数组，每个元素为一个对象，字段为：question（题干字符串，不含选项前缀）、options（4 个字符串选项的数组）、correctIndex（0-3 之间的数字）、explanation（解析说明）。只返回 JSON 数组，不要包含其他文字、Markdown 代码块或额外说明。'
-                                }
-                            ],
-                            temperature: 0.7,
-                            max_tokens: 800
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('网络请求失败：' + response.status);
-                    }
-
-                    const data = await response.json();
-                    // DeepSeek Chat Completions 风格：从 choices[0].message.content 中拿到文本，再解析为 JSON 数组
-                    const content = data && data.choices && data.choices[0] && data.choices[0].message
-                        ? (data.choices[0].message.content || '').trim()
-                        : '';
-
-                    let list = [];
-                    try {
-                        list = JSON.parse(content);
-                    } catch (parseErr) {
-                        console.error('解析 DeepSeek 返回内容为 JSON 失败：', parseErr, content);
-                        throw new Error('解析题目数据失败，请稍后重试。');
-                    }
-
-                    if (!Array.isArray(list) || !list.length) {
-                        throw new Error('返回数据为空或格式不符合约定');
-                    }
-                    renderQuestions(list.slice(0, 3));
-                } catch (err) {
-                    console.error(err);
-                    questionArea.innerHTML = `
-                        <div class="question-number">题目加载失败</div>
-                        <div class="question-text">无法从 DeepSeek 获取题目，请检查网络或稍后重试。</div>
-                    `;
-                } finally {
-                    refreshBtn.disabled = false;
-                }
-            }
-
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', function () {
-                    fetchQuestionFromDeepSeek();
-                });
-            }
-
-            // 页面加载时自动获取第一道题
-            fetchQuestionFromDeepSeek();
-        })();
-    </script>
+    <script src="practice.js"></script>
 </body>
 </html>
