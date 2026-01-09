@@ -9,9 +9,15 @@ layout: false
     <title>地理学习平台</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body style="visibility: hidden;"> <!-- 初始隐藏，防止未登录看到内容 -->
     <div class="container">
-        <div class="header">
+        <div class="header" style="position: relative;">
+            <!-- 用户信息栏 -->
+            <div id="user-info" style="position: absolute; top: -10px; right: 0; font-size: 14px; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 20px;">
+                <span id="welcome-msg"></span>
+                <button onclick="logout()" style="background: none; border: none; color: #ff6b6b; cursor: pointer; margin-left: 10px; text-decoration: underline;">退出</button>
+            </div>
+
             <h1 style="color: #fff; margin-bottom: 20px; font-size: 32px;"><strong>教学资源工具箱</strong></h1>
             <p>通过多元化的学习方式，深入理解昼夜交替，地球公转，自转等自然现象，提升地理<br>科学素养</p>
         </div>
@@ -21,7 +27,7 @@ layout: false
                 <div class="icon blue">🎧</div>
                 <h3>听一听</h3>
                 <p>聆听专业地理教师解读，深入了解昼夜交替、地球公转自转等自然现象的科学原理，获得全面的理论指导。</p>
-                <a href="listen.html" class="btn blue">进入地理播客</a>
+                <a href="listen.html" class="btn blue">进入地理视频</a>
             </div>
             <div class="card">
                 <div class="icon purple">🔍</div>
@@ -56,5 +62,24 @@ layout: false
             </div>
         </div>
     </div>
+
+    <script>
+        // 检查登录状态
+        const currentUser = localStorage.getItem('geo_current_user');
+        
+        if (!currentUser) {
+            // 未登录，跳转到登录页
+            window.location.href = 'login.html';
+        } else {
+            // 已登录，显示页面内容和用户名
+            document.body.style.visibility = 'visible';
+            document.getElementById('welcome-msg').textContent = `欢迎，${currentUser}`;
+        }
+
+        function logout() {
+            localStorage.removeItem('geo_current_user');
+            window.location.href = 'login.html';
+        }
+    </script>
 </body>
 </html>

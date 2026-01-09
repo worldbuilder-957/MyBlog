@@ -13,8 +13,19 @@ const API_CONFIG = {
     MODEL: 'deepseek-chat'
 };
 
-const STORAGE_KEYS = {
-    MISTAKE_BOOK: 'geo_mistake_book'
+// 获取当前用户的错题本存储Key
+function getMistakeBookKey() {
+    const currentUser = localStorage.getItem('geo_current_user');
+    return currentUser ? `geo_mistake_book_${currentUser}` : 'geo_mistake_book';
+}
+
+// 题目主题提示词映射
+const TOPIC_MAP = {
+    mixed: '与地球自转、公转、昼夜交替或四季变化相关的地理单选题',
+    principles: '侧重于地球自转方向、周期、公转轨道、速度、地轴倾斜等基本地理原理的单选题',
+    day_night: '侧重于昼夜交替成因、晨昏线判断、地方时与时区计算等相关的地理单选题',
+    seasons: '侧重于四季成因、正午太阳高度变化、昼夜长短变化、五带划分等相关的地理单选题',
+    application: '侧重于结合生活实际（如影子变化、太阳能板角度、二十四节气、天文现象观测）的地理应用单选题'
 };
 
 // ============================================================
@@ -23,7 +34,8 @@ const STORAGE_KEYS = {
 const state = {
     totalQuestions: 0,
     correctAnswers: 0,
-    currentQuestions: []
+    currentQuestions: [],
+    selectedTopic: 'mixed' // 默认为混合模式
 };
 
 // ============================================================
@@ -36,6 +48,7 @@ const dom = {
     backToPracticeBtn: null,
     clearMistakesBtn: null,
     exportPdfBtn: null,
+    challengeTypes: null, // 挑战类型卡片
     
     // 视图容器
     practiceView: null,
@@ -62,6 +75,7 @@ function initDomElements() {
     dom.backToPracticeBtn = document.getElementById('back-to-practice-btn');
     dom.clearMistakesBtn = document.getElementById('clear-mistakes-btn');
     dom.exportPdfBtn = document.getElementById('export-pdf-btn');
+    dom.challengeTypes = document.querySelectorAll('.challenge-type');
     
     dom.practiceView = document.getElementById('practice-view');
     dom.mistakeView = document.getElementById('mistake-view');
@@ -77,6 +91,23 @@ function bindEventListeners() {
     if (dom.backToPracticeBtn) dom.backToPracticeBtn.addEventListener('click', showPracticeView);
     if (dom.clearMistakesBtn) dom.clearMistakesBtn.addEventListener('click', clearMistakes);
     if (dom.exportPdfBtn) dom.exportPdfBtn.addEventListener('click', exportMistakesToPdf);
+    
+    // 绑定挑战类型点击事件
+    if (dom.challengeTypes) {
+        dom.challengeTypes.forEach(card => {
+            card.addEventListener('click', () => handleTopicSelection(card));
+        });
+    }
+}
+
+function handleTopicSelection(selectedCard) {
+    // UI 更新：移除其他卡片的选中状态，给当前卡片添加选中状态
+    dom.challengeTypes.forEach(c => c.classList.remove('selected'));
+    selectedCard.classList.add('selected');
+    
+    // 状态更新
+    const topic = selectedCard.getAttribute('data-topic');
+    state.selectedTopic = topic;
 }
 
 // ============================================================
@@ -188,7 +219,8 @@ function handleAnswer(qIndex, selectedIndex, buttons, explanationEl) {
 // 7. 错题本管理 (Mistake Book Management)
 // ============================================================
 function saveMistake(question, userChoiceIndex) {
-    const mistakes = JSON.parse(localStorage.getItem(STORAGE_KEYS.MISTAKE_BOOK) || '[]');
+    const key = getMistakeBookKey();
+    const mistakes = JSON.parse(localStorage.getItem(key) || '[]');
     // 查重：避免重复添加
     const exists = mistakes.some(m => m.question === question.question);
     if (!exists) {
@@ -197,12 +229,12 @@ function saveMistake(question, userChoiceIndex) {
             userChoiceIndex: userChoiceIndex,
             date: new Date().toISOString()
         });
-        localStorage.setItem(STORAGE_KEYS.MISTAKE_BOOK, JSON.stringify(mistakes));
+        localStorage.setItem(key, JSON.stringify(mistakes));
     }
 }
 
 function renderMistakes() {
-    const mistakes = JSON.parse(localStorage.getItem(STORAGE_KEYS.MISTAKE_BOOK) || '[]');
+    const mistakes = JSON.parse(localStorage.getItem(getMistakeBookKey()) || '[]');
     
     if (mistakes.length === 0) {
         dom.mistakeListEl.innerHTML = '<p style="text-align:center; color:#666; padding: 20px;">暂无错题记录，继续加油！🎉</p>';
@@ -268,7 +300,7 @@ function generateStaticOptionsHtml(q) {
 
 function clearMistakes() {
     if(confirm('确定要清空所有错题记录吗？')) {
-        localStorage.removeItem(STORAGE_KEYS.MISTAKE_BOOK);
+        localStorage.removeItem(getMistakeBookKey());
         renderMistakes();
     }
 }
@@ -317,9 +349,10 @@ function checkRedoAnswer(q, index, selectedIdx, optionListEl, explanationEl, red
 }
 
 function removeMistake(index) {
-    const mistakes = JSON.parse(localStorage.getItem(STORAGE_KEYS.MISTAKE_BOOK) || '[]');
+    const key = getMistakeBookKey();
+    const mistakes = JSON.parse(localStorage.getItem(key) || '[]');
     mistakes.splice(index, 1);
-    localStorage.setItem(STORAGE_KEYS.MISTAKE_BOOK, JSON.stringify(mistakes));
+    localStorage.setItem(key, JSON.stringify(mistakes));
     renderMistakes();
 }
 
@@ -327,7 +360,7 @@ function removeMistake(index) {
 // 9. PDF 导出功能 (Export PDF)
 // ============================================================
 function exportMistakesToPdf() {
-    const mistakes = JSON.parse(localStorage.getItem(STORAGE_KEYS.MISTAKE_BOOK) || '[]');
+    const mistakes = JSON.parse(localStorage.getItem(getMistakeBookKey()) || '[]');
     if (mistakes.length === 0) {
         alert('错题本为空，无法导出。');
         return;
@@ -397,12 +430,31 @@ async function fetchQuestionFromDeepSeek() {
     if (!dom.refreshBtn || !dom.questionArea) return;
     
     dom.refreshBtn.disabled = true;
+    
+    let countdown = 10; // 预估等待时间（秒）
     dom.questionArea.innerHTML = `
-        <div class="question-container">
-            <div class="question-number">题目加载中...</div>
-            <div class="question-text">正在出题，请稍候。</div>
+        <div class="question-container" style="text-align: center; padding: 40px;">
+            <div class="loading-spinner"></div>
+            <div class="question-text">
+                正在根据所选主题生成题目，请稍候...<br>
+                <span id="loading-countdown" style="font-size: 13px; color: #999; margin-top: 8px; display: inline-block;">(预计还需要 ${countdown} 秒)</span>
+            </div>
         </div>
     `;
+
+    const countdownEl = document.getElementById('loading-countdown');
+    const timerId = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            if (countdownEl) countdownEl.textContent = `(预计还需要 ${countdown} 秒)`;
+        } else {
+            if (countdownEl) countdownEl.textContent = `(即将完成...)`;
+            clearInterval(timerId);
+        }
+    }, 1000);
+
+    // 根据当前选中的主题获取对应的提示词描述
+    const topicDescription = TOPIC_MAP[state.selectedTopic] || TOPIC_MAP.mixed;
 
     try {
         const response = await fetch(API_CONFIG.URL, {
@@ -420,7 +472,7 @@ async function fetchQuestionFromDeepSeek() {
                     },
                     {
                         role: 'user',
-                        content: '请你一次出 3 道与地球自转、公转、昼夜交替或四季变化相关的地理单选题，整体返回一个 JSON 数组，每个元素为一个对象，字段为：question（题干字符串，不含选项前缀）、options（4 个字符串选项的数组）、correctIndex（0-3 之间的数字）、explanation（解析说明）。只返回 JSON 数组，不要包含其他文字、Markdown 代码块或额外说明。'
+                        content: `请你一次出 3 道${topicDescription}，整体返回一个 JSON 数组，每个元素为一个对象，字段为：question（题干字符串，不含选项前缀）、options（4 个字符串选项的数组）、correctIndex（0-3 之间的数字）、explanation（解析说明）。只返回 JSON 数组，不要包含其他文字、Markdown 代码块或额外说明。`
                     }
                 ],
                 temperature: 0.7,
@@ -456,6 +508,7 @@ async function fetchQuestionFromDeepSeek() {
             </div>
         `;
     } finally {
+        clearInterval(timerId);
         dom.refreshBtn.disabled = false;
     }
 }

@@ -1,0 +1,198 @@
+---
+layout: false
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - 地理教学资源工具箱</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .login-header p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 15px;
+        }
+        .btn-login:hover {
+            background: #2980b9;
+        }
+        .btn-register {
+            background: none;
+            border: none;
+            color: #3498db;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 14px;
+        }
+        .error-msg {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+            background: #fdecea;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h2 id="formTitle">欢迎回来</h2>
+            <p>登录地理教学资源工具箱</p>
+        </div>
+        <div id="errorMsg" class="error-msg"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="username" required placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="password" required placeholder="请输入密码">
+            </div>
+            <button type="submit" class="btn-login" id="submitBtn">登录</button>
+        </form>
+        <p style="font-size: 14px; color: #666;">
+            <span id="toggleText">还没有账号？</span> 
+            <button onclick="toggleMode()" class="btn-register" id="toggleBtn">立即注册</button>
+        </p>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMsg = document.getElementById('errorMsg');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const formTitle = document.getElementById('formTitle');
+        const toggleText = document.getElementById('toggleText');
+
+        let isLoginMode = true;
+
+        // 检查是否已登录，如果已登录直接跳转首页
+        if (localStorage.getItem('geo_current_user')) {
+            window.location.href = 'index.html';
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+        }
+
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            formTitle.textContent = isLoginMode ? '欢迎回来' : '注册新账号';
+            submitBtn.textContent = isLoginMode ? '登录' : '注册';
+            toggleBtn.textContent = isLoginMode ? '立即注册' : '去登录';
+            toggleText.textContent = isLoginMode ? '还没有账号？' : '已有账号？';
+            errorMsg.style.display = 'none';
+            form.reset();
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                showError('请输入用户名和密码');
+                return;
+            }
+
+            // 隐患修复 1: 增加 JSON 解析的容错处理
+            // 如果 localStorage 数据损坏，JSON.parse 会报错导致页面崩溃
+            let users = {};
+            try {
+                users = JSON.parse(localStorage.getItem('geo_users') || '{}');
+            } catch (err) {
+                console.error('用户数据损坏，已重置', err);
+                users = {}; // 数据损坏时重置为空，保证页面不崩溃
+            }
+
+            if (isLoginMode) {
+                // --- 登录逻辑 ---
+                if (users[username] && users[username] === password) {
+                    // 登录成功：保存当前用户
+                    localStorage.setItem('geo_current_user', username);
+                    window.location.href = 'index.html';
+                } else {
+                    showError('用户名或密码错误');
+                }
+            } else {
+                // --- 注册逻辑 ---
+                if (users[username]) {
+                    showError('该用户名已被注册');
+                } else {
+                    users[username] = password;
+                    // 隐患修复 2: 增加存储写入的异常捕获
+                    try {
+                        localStorage.setItem('geo_users', JSON.stringify(users));
+                        alert('注册成功，请登录');
+                        toggleMode(); // 切换回登录模式
+                    } catch (e) {
+                        console.error(e);
+                        showError('注册失败：存储空间不足或浏览器限制了存储');
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
