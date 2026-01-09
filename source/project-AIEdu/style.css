@@ -1,0 +1,194 @@
+/* 全局样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* 头部样式 */
+.header {
+    text-align: center;
+    margin-bottom: 50px;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* 卡片容器 */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+}
+
+/* 卡片样式 */
+.card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+}
+
+/* 图标样式 */
+.icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+    line-height: 80px;
+    border-radius: 50%;
+    background: #f0f0f0;
+}
+
+.icon.blue {
+    color: #3498db;
+}
+
+.icon.purple {
+    color: #9b59b6;
+}
+
+.icon.red {
+    color: #e74c3c;
+}
+
+.icon.green {
+    color: #2ecc71;
+}
+
+.icon.orange {
+    color: #f39c12;
+}
+
+.icon.brown {
+    color: #d35400;
+}
+
+/* 卡片标题 */
+.card h3 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* 卡片描述 */
+.card p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    min-height: 80px;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn.blue {
+    background: #3498db;
+}
+
+.btn.purple {
+    background: #9b59b6;
+}
+
+.btn.red {
+    background: #e74c3c;
+}
+
+.btn.green {
+    background: #2ecc71;
+}
+
+.btn.orange {
+    background: #f39c12;
+}
+
+.btn.brown {
+    background: #d35400;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .cards {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .cards {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .card {
+        padding: 25px;
+    }
+    
+    .header {
+        margin-bottom: 30px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 15px;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+    
+    .icon {
+        font-size: 40px;
+        width: 70px;
+        height: 70px;
+        line-height: 70px;
+    }
+    
+    .card h3 {
+        font-size: 20px;
+    }
+    
+    .btn {
+        padding: 10px 25px;
+        font-size: 13px;
+    }
+}

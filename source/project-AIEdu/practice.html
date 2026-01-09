@@ -1,0 +1,428 @@
+---
+layout: false
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>练一练 - 地理知识挑战</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .subpage-content {
+            background: #fff;
+            border-radius: 15px;
+            padding: 40px;
+            margin-top: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2ecc71;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .subpage-title {
+            color: #2ecc71;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .subpage-section {
+            margin-bottom: 30px;
+        }
+        .subpage-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .subpage-section p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .question-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #2ecc71;
+        }
+        .question-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .question-number {
+            font-weight: bold;
+            color: #2ecc71;
+            margin-bottom: 10px;
+        }
+        .question-text {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .option-list {
+            list-style-type: none;
+            margin-bottom: 15px;
+        }
+        .option-item {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        .option-item input[type="radio"] {
+            position: absolute;
+            left: 0;
+            top: 5px;
+        }
+        .btn-refresh {
+            display: inline-block;
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: none;
+            background: #2ecc71;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s, transform 0.1s;
+            margin-bottom: 10px;
+        }
+        .btn-refresh:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+        .btn-refresh:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .challenge-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .challenge-type {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .challenge-type .icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .answer-explanation {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #fdf6e3;
+            font-size: 14px;
+            color: #555;
+        }
+        .answer-explanation strong {
+            color: #e67e22;
+        }
+        .quiz-stats {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px dashed #ddd;
+            font-size: 14px;
+            color: #444;
+        }
+        .option-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .option-button:hover {
+            background: #f0f9f4;
+            border-color: #2ecc71;
+        }
+        .option-button.correct {
+            background: #e8f8f2;
+            border-color: #2ecc71;
+            color: #27ae60;
+        }
+        .option-button.incorrect {
+            background: #fdecea;
+            border-color: #e74c3c;
+            color: #c0392b;
+        }
+        .option-button:disabled {
+            cursor: default;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #fff; margin-bottom: 20px; font-size: 32px;"><strong>教学资源工具箱</strong></h1>
+            <p>通过多元化的学习方式，深入理解昼夜交替，地球公转，自转等自然现象，提升地理<br>科学素养</p>
+        </div>
+        
+        <div class="subpage-content">
+            <a href="index.html" class="back-link">← 返回主页面</a>
+            <h2 class="subpage-title">✏️ 练一练 - 知识挑战</h2>
+            
+            <div class="subpage-section">
+                <h3>功能介绍</h3>
+                <p>本模块提供核心知识挑战功能，通过精心设计的题目，检验学生对地球运动相关知识的理解程度，巩固学习成果。题目涵盖地球自转、公转、昼夜交替等多个方面。</p>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>挑战类型</h3>
+                <div class="challenge-types">
+                    <div class="challenge-type">
+                        <div class="icon">🌍</div>
+                        <h4>地理原理</h4>
+                        <p>检验对地球自转、公转等基本原理的掌握</p>
+                    </div>
+                    <div class="challenge-type">
+                        <div class="icon">🌓</div>
+                        <h4>昼夜交替</h4>
+                        <p>测试对昼夜交替现象形成原因的理解</p>
+                    </div>
+                    <div class="challenge-type">
+                        <div class="icon">🗓️</div>
+                        <h4>四季变化</h4>
+                        <p>考察对四季形成与地球公转关系的认识</p>
+                    </div>
+                    <div class="challenge-type">
+                        <div class="icon">🧭</div>
+                        <h4>应用拓展</h4>
+                        <p>检验将地理知识应用于实际生活的能力</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>AI 智能出题</h3>
+                <p>本页面已接入 DeepSeek 模型，每次进入或点击“刷新习题”都会生成一套全新的地理练习题。作答后可立即查看正确答案与解析。</p>
+                <button id="refresh-question-btn" class="btn-refresh">🔄 刷新习题（一次生成 3 道）</button>
+                <div id="ai-question-area" class="question-list">
+                    <div class="question-container">
+                        <div class="question-number">题目加载中...</div>
+                        <div class="question-text">正在向 AI 请求题目，请稍候。</div>
+                    </div>
+                </div>
+                <div id="quiz-stats" class="quiz-stats">
+                    本次出题 0 道，答对 0 道。请开始作答吧！
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>使用建议</h3>
+                <p>1. 在学习完地球运动相关知识后，及时进行相应的知识挑战</p>
+                <p>2. 挑战完成后，仔细查看解析，加深对地球自转和公转原理的理解</p>
+                <p>3. 定期进行综合挑战，巩固所学的地理科学知识</p>
+                <p>4. 与同学比较挑战成绩，互相学习进步，共同提高地理科学素养</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const refreshBtn = document.getElementById('refresh-question-btn');
+            const questionArea = document.getElementById('ai-question-area');
+            const statsEl = document.getElementById('quiz-stats');
+
+            let totalQuestions = 0;
+            let correctAnswers = 0;
+            let currentQuestions = [];
+
+            function updateStats() {
+                if (totalQuestions === 0) {
+                    statsEl.textContent = '本次出题 0 道，答对 0 道。请开始作答吧！';
+                    return;
+                }
+                const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
+                let comment = '';
+                if (accuracy === 100) {
+                    comment = '太棒了！满分表现，继续保持！';
+                } else if (accuracy >= 80) {
+                    comment = '表现不错，再接再厉，可以冲击满分！';
+                } else if (accuracy >= 50) {
+                    comment = '已经有一定掌握，多练几道会更熟练。';
+                } else {
+                    comment = '先别灰心，再多做几道题巩固一下基础知识。';
+                }
+                statsEl.textContent = `本次出题 ${totalQuestions} 道，答对 ${correctAnswers} 道（正确率 ${accuracy}%）。${comment}`;
+            }
+
+            function renderQuestions(questions) {
+                currentQuestions = questions.map(q => ({
+                    ...q,
+                    answered: false
+                }));
+
+                if (!questionArea) return;
+
+                questionArea.innerHTML = '';
+
+                currentQuestions.forEach((q, qIndex) => {
+                    const container = document.createElement('div');
+                    container.className = 'question-container';
+                    container.setAttribute('data-q-index', String(qIndex));
+
+                    const optionsHtml = (q.options || []).map((opt, idx) =>
+                        `<button class="option-button" data-index="${idx}">${String.fromCharCode(65 + idx)}. ${opt}</button>`
+                    ).join('');
+
+                    container.innerHTML = `
+                        <div class="question-number">题目 ${qIndex + 1}：单选题</div>
+                        <div class="question-text">${q.question || '（题目内容加载失败）'}</div>
+                        <div class="option-list">
+                            ${optionsHtml || '<p>选项加载失败，请点击“刷新习题”重试。</p>'}
+                        </div>
+                        <div class="answer-explanation" style="display:none;"></div>
+                    `;
+
+                    const buttons = container.querySelectorAll('.option-button');
+                    const explanationEl = container.querySelector('.answer-explanation');
+
+                    buttons.forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const index = Number(btn.getAttribute('data-index'));
+                            handleAnswer(qIndex, index, container, buttons, explanationEl);
+                        });
+                    });
+
+                    questionArea.appendChild(container);
+                });
+            }
+
+            function handleAnswer(qIndex, selectedIndex, container, buttons, explanationEl) {
+                const q = currentQuestions[qIndex];
+                if (!q || q.answered) return;
+                currentQuestions[qIndex].answered = true;
+
+                const correctIndex = Number(q.correctIndex);
+
+                buttons.forEach(btn => {
+                    const idx = Number(btn.getAttribute('data-index'));
+                    btn.disabled = true;
+                    if (idx === correctIndex) {
+                        btn.classList.add('correct');
+                    }
+                });
+
+                let isCorrect = selectedIndex === correctIndex;
+                if (!isCorrect && buttons[selectedIndex]) {
+                    buttons[selectedIndex].classList.add('incorrect');
+                }
+
+                totalQuestions++;
+                if (isCorrect) {
+                    correctAnswers++;
+                }
+
+                const correctLabel = typeof correctIndex === 'number'
+                    ? String.fromCharCode(65 + correctIndex)
+                    : '（未知）';
+                const explanation = q.explanation || '暂时没有提供解析，请根据所学知识自行思考。';
+
+                if (explanationEl) {
+                    explanationEl.style.display = 'block';
+                    explanationEl.innerHTML = `
+                        <p><strong>${isCorrect ? '✅ 回答正确！' : '❌ 回答错误。'}</strong></p>
+                        <p><strong>正确答案：</strong>${correctLabel}</p>
+                        <p><strong>解析：</strong>${explanation}</p>
+                    `;
+                }
+
+                updateStats();
+            }
+
+            async function fetchQuestionFromDeepSeek() {
+                if (!refreshBtn || !questionArea) return;
+                refreshBtn.disabled = true;
+                questionArea.innerHTML = `
+                    <div class="question-container">
+                        <div class="question-number">题目加载中...</div>
+                        <div class="question-text">正在出题，请稍候。</div>
+                    </div>
+                `;
+
+                try {
+                    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // TODO: 将下方占位符替换为您自己的 DeepSeek API Key，格式保持为 Bearer YOUR_KEY。
+                            // 注意：在正式生产环境中，不建议直接在前端暴露密钥。
+                            'Authorization': 'Bearer sk-64e582e67c9e4f7b89e67602b6670c4d'
+                        },
+                        body: JSON.stringify({
+                            model: 'deepseek-chat',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: '你是一名初中地理老师，善于根据课程内容出规范的选择题，并用简明清晰的语言给出解析。'
+                                },
+                                {
+                                    role: 'user',
+                                    content: '请你一次出 3 道与地球自转、公转、昼夜交替或四季变化相关的地理单选题，整体返回一个 JSON 数组，每个元素为一个对象，字段为：question（题干字符串，不含选项前缀）、options（4 个字符串选项的数组）、correctIndex（0-3 之间的数字）、explanation（解析说明）。只返回 JSON 数组，不要包含其他文字、Markdown 代码块或额外说明。'
+                                }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 800
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('网络请求失败：' + response.status);
+                    }
+
+                    const data = await response.json();
+                    // DeepSeek Chat Completions 风格：从 choices[0].message.content 中拿到文本，再解析为 JSON 数组
+                    const content = data && data.choices && data.choices[0] && data.choices[0].message
+                        ? (data.choices[0].message.content || '').trim()
+                        : '';
+
+                    let list = [];
+                    try {
+                        list = JSON.parse(content);
+                    } catch (parseErr) {
+                        console.error('解析 DeepSeek 返回内容为 JSON 失败：', parseErr, content);
+                        throw new Error('解析题目数据失败，请稍后重试。');
+                    }
+
+                    if (!Array.isArray(list) || !list.length) {
+                        throw new Error('返回数据为空或格式不符合约定');
+                    }
+                    renderQuestions(list.slice(0, 3));
+                } catch (err) {
+                    console.error(err);
+                    questionArea.innerHTML = `
+                        <div class="question-number">题目加载失败</div>
+                        <div class="question-text">无法从 DeepSeek 获取题目，请检查网络或稍后重试。</div>
+                    `;
+                } finally {
+                    refreshBtn.disabled = false;
+                }
+            }
+
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function () {
+                    fetchQuestionFromDeepSeek();
+                });
+            }
+
+            // 页面加载时自动获取第一道题
+            fetchQuestionFromDeepSeek();
+        })();
+    </script>
+</body>
+</html>

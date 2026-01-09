@@ -1,0 +1,249 @@
+---
+layout: false
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探一探 - 地球运动探索</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .subpage-content {
+            background: #fff;
+            border-radius: 15px;
+            padding: 40px;
+            margin-top: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #e74c3c;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .subpage-title {
+            color: #e74c3c;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .subpage-section {
+            margin-bottom: 30px;
+        }
+        .subpage-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .subpage-section p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .game-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #e74c3c;
+            text-align: center;
+        }
+        .game-image {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            width: 100%;
+            height: 200px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        .game-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .feature-item .icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .start-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+            text-decoration: none;
+            color: white;
+        }
+        .experiment-info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .experiment-info h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .experiment-info ul {
+            color: #856404;
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        .experiment-info li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #fff; margin-bottom: 20px; font-size: 32px;"><strong>教学资源工具箱</strong></h1>
+            <p>通过多元化的学习方式，深入理解昼夜交替，地球公转，自转等自然现象，提升地理<br>科学素养</p>
+        </div>
+        
+        <div class="subpage-content">
+            <a href="index.html" class="back-link">← 返回主页面</a>
+            <h2 class="subpage-title">🎮 探一探 - 地球运动模拟实验室</h2>
+            
+            <div class="subpage-section">
+                <h3>探索介绍</h3>
+                <p>《地球运动模拟实验室》是一款基于高中地理地球运动知识开发的互动模拟游戏，通过沉浸式体验，让学生亲身感受地球自转、公转带来的昼夜交替和四季变化，深入理解地球运动的科学原理。</p>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>模拟实验室预览</h3>
+                
+                <!-- 实验室1 -->
+                <div class="game-preview" style="margin-bottom: 30px;">
+                    <div class="game-image">🌍</div>
+                    <h4>3D地球运动虚拟实验 - 实验室1</h4>
+                    <p>沉浸式互动体验 | 基于科学原理 | 地球运动主题</p>
+                    <a href="earth3d.html" class="start-button">🚀 开始3D虚拟实验</a>
+                </div>
+
+                <!-- 实验室2 -->
+                <div class="game-preview" style="margin-bottom: 30px;">
+                    <div class="game-image" style="background: linear-gradient(135deg, #ff6b6b, #ee5a6f);">🌡️</div>
+                    <h4>地轴倾斜与四季成因 - 实验室2</h4>
+                    <p>温度热力图可视化 | 地轴倾斜影响 | 四季成因探索</p>
+                    <a href="earth3d_season.html" class="start-button">🚀 开始温度热力图实验</a>
+                </div>
+
+                <!-- 实验室3 -->
+                <div class="game-preview">
+                    <div class="game-image" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">🌌</div>
+                    <h4>地球公转轨道 - 实验室3</h4>
+                    <p>椭圆轨道可视化 | 长短轴展示 | 四至点标记</p>
+                    <a href="earth3d_orbit.html" class="start-button">🚀 开始公转轨道实验</a>
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>实验室1功能说明</h3>
+                <div class="experiment-info">
+                    <h4>✨ 实验室1功能特点</h4>
+                    <ul>
+                        <li><strong>地轴倾斜控制</strong>：可调整地轴倾斜角度（0°-90°），观察倾斜对光照和季节的影响，默认设置为23.5°（黄赤交角）</li>
+                        <li><strong>自转速度调节</strong>：控制地球自转速度，可以暂停或加速，直观观察昼夜交替现象</li>
+                        <li><strong>公转位置模拟</strong>：通过调整公转位置（0°-360°），模拟地球在公转轨道上的不同位置，观察春分、夏至、秋分、冬至四个关键节气</li>
+                        <li><strong>实时状态显示</strong>：左上角信息面板实时显示当前季节、北半球受光情况、地轴倾角等关键参数</li>
+                        <li><strong>地轴辅助线</strong>：可选择显示黄色地轴辅助线，帮助理解地轴倾斜的概念</li>
+                        <li><strong>晨昏线观察</strong>：通过太阳平行光源，清晰观察地球上的晨昏线（白天与黑夜的分界线）</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="subpage-section">
+                <h3>实验室2功能说明</h3>
+                <div class="experiment-info" style="background: #e7f3ff; border-left-color: #2196F3;">
+                    <h4 style="color: #0d47a1;">🌡️ 实验室2功能特点 - 温度热力图可视化</h4>
+                    <ul style="color: #0d47a1;">
+                        <li><strong>温度热力图</strong>：使用Shader着色器技术，通过计算光线与地球表面法线的角度，实时生成温度热力图（红色=炎热，黄色/绿色=温暖，蓝色=寒冷）</li>
+                        <li><strong>地轴倾斜影响</strong>：调整地轴倾斜角度，直观观察热量分布的变化，理解为什么地轴倾斜会导致四季变化</li>
+                        <li><strong>公转位置模拟</strong>：通过旋转光源位置，模拟地球在公转轨道上的不同位置，观察北半球和南半球的热量分布变化</li>
+                        <li><strong>实时状态分析</strong>：左上角显示当前倾角、北半球状态（直射/斜射）和教学提示</li>
+                        <li><strong>自转观察</strong>：可选择开启自转，观察热力图随昼夜的变化</li>
+                        <li><strong>教学引导</strong>：当倾角为0°时，显示"如果地轴不倾斜，全球季节将永远不变"的教学提示</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="subpage-section">
+                <h3>实验室3功能说明</h3>
+                <div class="experiment-info" style="background: #f3e5f5; border-left-color: #9b59b6;">
+                    <h4 style="color: #6a1b9a;">🌌 实验室3功能特点 - 地球公转轨道可视化</h4>
+                    <ul style="color: #6a1b9a;">
+                        <li><strong>椭圆轨道</strong>：展示地球围绕太阳的椭圆公转轨道，长半轴和短半轴清晰可见，符合真实地球轨道特征</li>
+                        <li><strong>四至点标记</strong>：在轨道上标记春分、夏至、秋分、冬至四个关键位置，用不同颜色区分（绿色=春分，红色=夏至，黄色=秋分，蓝色=冬至）</li>
+                        <li><strong>长短轴显示</strong>：可选择显示椭圆的长轴（品红色虚线）和短轴（青色虚线），帮助学生理解椭圆轨道结构</li>
+                        <li><strong>实时公转</strong>：地球围绕太阳实时公转，可调节公转速度（慢速、正常、快速），观察不同速度下的公转过程</li>
+                        <li><strong>地轴倾斜</strong>：可调整地轴倾斜角度，观察地轴倾斜对地球公转的影响</li>
+                        <li><strong>位置信息</strong>：左上角实时显示当前公转位置（春分/夏至/秋分/冬至）、公转角度和公转速度</li>
+                        <li><strong>自转功能</strong>：可选择开启地球自转，同时观察地球的自转和公转运动</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>探索特色</h3>
+                <div class="game-features">
+                    <div class="feature-item">
+                        <div class="icon">🎯</div>
+                        <h4>基于科学原理</h4>
+                        <p>严格按照地球运动科学原理设计</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="icon">🌍</div>
+                        <h4>直观模拟</h4>
+                        <p>实时观察地球自转公转运动</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="icon">☀️</div>
+                        <h4>现象演示</h4>
+                        <p>体验昼夜交替和四季变化过程</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="icon">📊</div>
+                        <h4>数据分析</h4>
+                        <p>获取地球运动参数和变化规律</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>使用建议</h3>
+                <p>1. 在学习地球运动知识后进行探索体验</p>
+                <p>2. 观察地球自转公转与昼夜交替的关系</p>
+                <p>3. 分析不同纬度的昼夜长短变化规律</p>
+                <p>4. 与同学分享探索发现和科学理解</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

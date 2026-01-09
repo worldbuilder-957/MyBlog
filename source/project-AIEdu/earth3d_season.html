@@ -1,0 +1,445 @@
+---
+layout: false
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地轴倾斜与四季成因 - 温度热力图实验</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* 教学引导UI样式 */
+        #hud-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px 25px;
+            border-radius: 12px;
+            font-size: 16px;
+            line-height: 2;
+            z-index: 100;
+            min-width: 320px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #hud-panel h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        #hud-panel .info-item {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        #hud-panel .info-label {
+            color: #81C784;
+            font-weight: bold;
+        }
+
+        #hud-panel .info-value {
+            color: #fff;
+            font-size: 18px;
+        }
+
+        #hud-panel .conclusion {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid #FFC107;
+            border-radius: 5px;
+            color: #FFC107;
+            font-size: 15px;
+            display: none;
+        }
+
+        #hud-panel .conclusion.show {
+            display: block;
+        }
+
+        /* dat.GUI 样式覆盖 */
+        .dg {
+            z-index: 200 !important;
+        }
+
+        .dg .c {
+            color: #fff !important;
+        }
+
+        .dg .property-name {
+            color: #fff !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 3D画布容器 -->
+    <div id="canvas-container"></div>
+
+    <!-- 教学引导HUD面板 -->
+    <div id="hud-panel">
+        <h2>🌡️ 温度热力图实验</h2>
+        <div class="info-item">
+            <span class="info-label">当前倾角：</span>
+            <span class="info-value" id="axis-angle">23.5°</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">北半球状态：</span>
+            <span class="info-value" id="hemisphere-status">红色-炎热 (直射)</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">公转位置：</span>
+            <span class="info-value" id="orbit-position">春分</span>
+        </div>
+        <div class="conclusion" id="conclusion-text">
+            💡 教学提示：如果地轴倾角为 0°，全球各地的季节将永远不变，不会有春夏秋冬的交替！
+        </div>
+    </div>
+
+    <!-- 引入 Three.js (r128版本) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 引入 dat.GUI -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+
+    <script>
+        // ==================== 全局变量 ====================
+        let scene, camera, renderer;
+        let earthGroup, earthBaseMesh, earthMesh; // 地球容器组、基础地球球体和热力图球体
+        let axisHelper; // 地轴辅助线
+        let sunLight; // 太阳光源
+        let controls; // dat.GUI 控制对象
+
+        // 控制参数
+        const params = {
+            地轴倾斜角: 23.5, // 默认23.5度，模拟黄赤交角
+            公转位置: 0, // 0-360度，模拟地球在公转轨道上的位置
+            显示自转: true, // 是否显示地球自转
+            显示地轴辅助线: true // 是否显示地轴辅助线
+        };
+
+        // 自转速度
+        let rotationSpeed = 0.005;
+
+        // ==================== Shader着色器代码 ====================
+        // 顶点着色器：处理顶点位置和法线
+        const vertexShader = `
+            varying vec3 vWorldNormal; // 将世界坐标系法线传递给片元着色器
+
+            void main() {
+                // 将法线转换到世界坐标系
+                // 使用modelMatrix将法线从模型空间转换到世界空间
+                vWorldNormal = normalize(mat3(modelMatrix) * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        // 片元着色器：计算温度热力图颜色
+        const fragmentShader = `
+            uniform vec3 lightDirection; // 光线方向（归一化，世界坐标系）
+            varying vec3 vWorldNormal; // 从顶点着色器传来的世界坐标系法线
+
+            void main() {
+                // 归一化法线和光线方向
+                vec3 normal = normalize(vWorldNormal);
+                vec3 lightDir = normalize(lightDirection);
+                
+                // 计算光线方向与法线的点积（Dot Product）
+                // 点积值范围：-1 到 1
+                // 1 = 完全朝向光线（直射），0 = 垂直，-1 = 完全背向光线（背光）
+                float dotProduct = dot(normal, lightDir);
+                
+                // 颜色映射逻辑：根据点积值映射到不同颜色
+                vec3 color;
+                
+                // 直射区：点积 > 0.9，渲染为深红色（代表炎热/夏季）
+                if (dotProduct > 0.9) {
+                    float t = (dotProduct - 0.9) * 10.0;
+                    color = mix(vec3(0.8, 0.0, 0.0), vec3(1.0, 0.0, 0.0), t);
+                }
+                // 强光照区：点积在 0.7 到 0.9 之间，橙色到红色的过渡
+                else if (dotProduct > 0.7) {
+                    float t = (dotProduct - 0.7) * 5.0;
+                    color = mix(vec3(1.0, 0.5, 0.0), vec3(1.0, 0.0, 0.0), t);
+                }
+                // 中等光照区：点积在 0.2 到 0.7 之间，黄色到绿色的过渡（代表温暖）
+                else if (dotProduct > 0.2) {
+                    float t = (dotProduct - 0.2) * 2.0;
+                    color = mix(vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 0.0), t);
+                }
+                // 弱光照区：点积在 0 到 0.2 之间，绿色到蓝色的过渡
+                else if (dotProduct > 0.0) {
+                    float t = dotProduct * 5.0;
+                    color = mix(vec3(0.0, 1.0, 0.0), vec3(0.0, 0.5, 1.0), t);
+                }
+                // 背光区/极夜：点积 <= 0，渲染为深蓝色/冰蓝色（代表寒冷/冬季）
+                else {
+                    float t = (dotProduct + 1.0) * 0.5;
+                    color = mix(vec3(0.0, 0.2, 0.8), vec3(0.0, 0.5, 1.0), t);
+                }
+                
+                // 设置透明度，使热力图半透明，可以看到底层地球表面
+                gl_FragColor = vec4(color, 0.1);
+            }
+        `;
+
+        // ==================== 初始化场景 ====================
+        function init() {
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000); // 黑色星空背景
+
+            // 创建相机（透视相机）
+            camera = new THREE.PerspectiveCamera(
+                75, // 视野角度
+                window.innerWidth / window.innerHeight, // 宽高比
+                0.1, // 近裁剪面
+                1000 // 远裁剪面
+            );
+            camera.position.set(0, 0, 5); // 设置相机位置
+
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // ==================== 创建太阳光源 ====================
+            // 使用平行光模拟太阳，光源会围绕地球旋转来模拟公转
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            sunLight.position.set(5, 0, 0); // 初始位置在右侧
+            scene.add(sunLight);
+
+            // 添加环境光，使背光面不至于完全黑暗
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
+            scene.add(ambientLight);
+
+            // ==================== 创建地球模型 ====================
+            // 外层容器组：负责地轴倾斜（Z轴旋转）
+            earthGroup = new THREE.Group();
+            
+            // 内层球体：负责自转（Y轴旋转）
+            const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
+            
+            // 创建基础地球球体（带地球纹理）
+            const textureLoader = new THREE.TextureLoader();
+            // 使用NASA地球纹理，如果加载失败则使用程序化材质
+            const earthTexture = textureLoader.load(
+                'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
+                function(texture) {
+                    // 纹理加载成功
+                },
+                undefined,
+                function(err) {
+                    // 纹理加载失败，使用备用方案
+                    console.log('地球纹理加载失败，使用程序化材质');
+                }
+            );
+            
+            // 基础地球材质（不透明，显示地球表面）
+            const earthBaseMaterial = new THREE.MeshStandardMaterial({
+                map: earthTexture,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            
+            // 创建基础地球球体
+            earthBaseMesh = new THREE.Mesh(earthGeometry, earthBaseMaterial);
+            earthGroup.add(earthBaseMesh);
+            
+            // 创建热力图球体（半透明层，稍微大一点以确保正确渲染）
+            const heatMapGeometry = new THREE.SphereGeometry(1.001, 64, 64);
+            const heatMapMaterial = new THREE.ShaderMaterial({
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                transparent: true, // 启用透明，使热力图半透明效果生效
+                uniforms: {
+                    // 光线方向统一变量，会在动画循环中更新
+                    lightDirection: { value: new THREE.Vector3(1, 0, 0) }
+                }
+            });
+
+            earthMesh = new THREE.Mesh(heatMapGeometry, heatMapMaterial);
+            earthGroup.add(earthMesh);
+
+            // ==================== 创建地轴辅助线 ====================
+            // 创建一条白色线条，从地球中心向上和向下延伸，贯穿地球
+            const axisGeometry = new THREE.BufferGeometry();
+            const axisPoints = [
+                0, -2, 0,  // 起点：地球下方
+                0, 2, 0    // 终点：地球上方
+            ];
+            axisGeometry.setAttribute('position', new THREE.Float32BufferAttribute(axisPoints, 3));
+            
+            const axisMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff, // 白色
+                linewidth: 2
+            });
+            
+            axisHelper = new THREE.Line(axisGeometry, axisMaterial);
+            earthGroup.add(axisHelper); // 添加到earthGroup，使其随地轴倾斜一起旋转
+
+            // 设置地轴倾斜：将容器组绕Z轴旋转23.5度
+            // 这里设置23.5度是为了模拟黄赤交角
+            earthGroup.rotation.z = THREE.MathUtils.degToRad(params.地轴倾斜角);
+
+            scene.add(earthGroup);
+
+            // ==================== 创建控制面板 (dat.GUI) ====================
+            const gui = new dat.GUI({ autoPlace: true });
+            gui.domElement.style.position = 'absolute';
+            gui.domElement.style.top = '20px';
+            gui.domElement.style.right = '20px';
+
+            // 地轴倾斜角控制器（核心变量）
+            gui.add(params, '地轴倾斜角', 0, 90, 0.1)
+                .name('地轴倾斜角 (°)')
+                .onChange(function(value) {
+                    // 更新地轴倾斜角度
+                    earthGroup.rotation.z = THREE.MathUtils.degToRad(value);
+                    updateHUD();
+                });
+
+            // 公转位置/季节控制器
+            gui.add(params, '公转位置', 0, 360, 1)
+                .name('公转位置/季节 (°)')
+                .onChange(function(value) {
+                    // 通过旋转光源位置来模拟地球在公转轨道上的不同位置
+                    // 0度 = 春分，90度 = 夏至，180度 = 秋分，270度 = 冬至
+                    const angle = THREE.MathUtils.degToRad(value);
+                    const radius = 5;
+                    sunLight.position.x = Math.cos(angle) * radius;
+                    sunLight.position.z = Math.sin(angle) * radius;
+                    
+                    // 更新Shader中的光线方向
+                    updateLightDirection();
+                    updateHUD();
+                });
+
+            // 显示自转开关
+            gui.add(params, '显示自转')
+                .name('显示自转')
+                .onChange(function(value) {
+                    updateHUD();
+                });
+
+            // 显示地轴辅助线开关
+            gui.add(params, '显示地轴辅助线')
+                .name('显示地轴辅助线')
+                .onChange(function(value) {
+                    if (axisHelper) {
+                        axisHelper.visible = value;
+                    }
+                });
+
+            controls = gui;
+
+            // ==================== 窗口大小调整处理 ====================
+            window.addEventListener('resize', function() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // 初始化HUD
+            updateHUD();
+            updateLightDirection();
+
+            // 开始动画循环
+            animate();
+        }
+
+        // ==================== 更新光线方向（传递给Shader） ====================
+        function updateLightDirection() {
+            // 计算从地球中心指向光源的归一化方向向量（世界坐标系）
+            // 这个方向向量会直接传递给Shader，Shader会在世界坐标系中计算点积
+            const lightDirWorld = new THREE.Vector3();
+            lightDirWorld.subVectors(sunLight.position, earthGroup.position).normalize();
+            
+            // 更新Shader中的uniform变量（使用世界坐标系的方向）
+            if (earthMesh && earthMesh.material) {
+                earthMesh.material.uniforms.lightDirection.value.copy(lightDirWorld);
+            }
+        }
+
+        // ==================== 更新HUD面板 ====================
+        function updateHUD() {
+            // 更新倾角显示
+            document.getElementById('axis-angle').textContent = params.地轴倾斜角.toFixed(1) + '°';
+
+            // 计算当前季节
+            const orbitAngle = params.公转位置;
+            let seasonName = '春分';
+            if (orbitAngle >= 45 && orbitAngle < 135) {
+                seasonName = '夏至';
+            } else if (orbitAngle >= 135 && orbitAngle < 225) {
+                seasonName = '秋分';
+            } else if (orbitAngle >= 225 && orbitAngle < 315) {
+                seasonName = '冬至';
+            }
+            document.getElementById('orbit-position').textContent = seasonName;
+
+            // 判断北半球状态
+            // 简化判断：0-90度和270-360度为直射，90-270度为斜射
+            let hemisphereStatus = '';
+            if ((orbitAngle >= 0 && orbitAngle < 90) || (orbitAngle >= 270 && orbitAngle <= 360)) {
+                hemisphereStatus = '红色-炎热 (直射)';
+            } else {
+                hemisphereStatus = '蓝色-寒冷 (斜射)';
+            }
+            document.getElementById('hemisphere-status').textContent = hemisphereStatus;
+
+            // 显示/隐藏教学提示
+            const conclusionEl = document.getElementById('conclusion-text');
+            if (params.地轴倾斜角 < 1.0) {
+                conclusionEl.classList.add('show');
+            } else {
+                conclusionEl.classList.remove('show');
+            }
+        }
+
+        // ==================== 动画循环 ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 地球自转：绕Y轴旋转（如果开启自转）
+            // 基础地球和热力图球体同步旋转
+            if (earthBaseMesh && earthMesh && params.显示自转) {
+                earthBaseMesh.rotation.y += rotationSpeed;
+                earthMesh.rotation.y += rotationSpeed;
+            }
+
+            // 更新光线方向（每帧更新，确保Shader正确计算）
+            updateLightDirection();
+
+            // 渲染场景
+            renderer.render(scene, camera);
+        }
+
+        // ==================== 启动应用 ====================
+        init();
+    </script>
+</body>
+</html>
+

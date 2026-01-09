@@ -1,0 +1,195 @@
+---
+layout: false
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>评一评 - 智能评价系统</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .subpage-content {
+            background: #fff;
+            border-radius: 15px;
+            padding: 40px;
+            margin-top: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #f39c12;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .subpage-title {
+            color: #f39c12;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .subpage-section {
+            margin-bottom: 30px;
+        }
+        .subpage-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .subpage-section p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .evaluation-dashboard {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f39c12, #e67e22);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        .evaluation-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .evaluation-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f39c12;
+            margin: 10px 0;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #fff; margin-bottom: 20px; font-size: 32px;"><strong>教学资源工具箱</strong></h1>
+            <p>通过多元化的学习方式，深入理解昼夜交替，地球公转，自转等自然现象，提升地理<br>科学素养</p>
+        </div>
+        
+        <div class="subpage-content">
+            <a href="index.html" class="back-link">← 返回主页面</a>
+            <h2 class="subpage-title">⭐ 评一评 - 智能评价系统</h2>
+            
+            <div class="subpage-section">
+                <h3>功能介绍</h3>
+                <p>本模块运用AI智能评价系统，对学生的学习过程和地理知识掌握情况进行深度评估和反馈。系统通过分析学生的答题情况、讨论参与度和探究活动表现，生成个性化的学习报告和改进建议。</p>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>评价指标</h3>
+                <div class="evaluation-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">85%</div>
+                        <div class="metric-label">地理原理掌握</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">78%</div>
+                        <div class="metric-label">现象分析能力</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">92%</div>
+                        <div class="metric-label">探究活动参与度</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">88%</div>
+                        <div class="metric-label">知识应用能力</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>学习报告示例</h3>
+                <div class="evaluation-dashboard">
+                    <h3>学习进度</h3>
+                    <div class="evaluation-item">
+                        <span>地球运动单元整体学习进度</span>
+                        <div style="width: 200px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 75%;"></div>
+                            </div>
+                            <span style="font-size: 12px; color: #666;">75%</span>
+                        </div>
+                    </div>
+                    <div class="evaluation-item">
+                        <span>地球运动原理掌握程度</span>
+                        <div style="width: 200px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%;"></div>
+                            </div>
+                            <span style="font-size: 12px; color: #666;">85%</span>
+                        </div>
+                    </div>
+                    <div class="evaluation-item">
+                        <span>自然现象分析能力</span>
+                        <div style="width: 200px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 78%;"></div>
+                            </div>
+                            <span style="font-size: 12px; color: #666;">78%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>智能反馈示例</h3>
+                <div class="evaluation-dashboard">
+                    <h4>个性化建议</h4>
+                    <ul style="color: #666; line-height: 1.8; margin-left: 20px;">
+                        <li>你在昼夜交替现象理解方面表现优秀，但在对比分析地球自转与公转的影响时可以更加深入</li>
+                        <li>建议多参与AI研讨，增强对地球运动与自然现象关系的理解</li>
+                        <li>在探究活动中，可以尝试从多个角度分析地理现象，提升分析的全面性</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="subpage-section">
+                <h3>使用建议</h3>
+                <p>1. 定期查看学习报告，了解自己的学习进度和薄弱环节</p>
+                <p>2. 认真阅读智能反馈，按照建议调整学习策略</p>
+                <p>3. 结合其他模块的学习，全面提升自己的地理科学素养</p>
+                <p>4. 与老师和同学分享评价结果，共同探讨改进方法</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

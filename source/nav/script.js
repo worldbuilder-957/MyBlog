@@ -1,11 +1,12 @@
-// #region 0. 云同步核心配置 (JSONBin) =========================
+// #region 0. 云同步核心配置=========================
+//使用网站：JSONbin
 const BIN_CONFIG = {
-    // ⚠️ 请替换为你自己的 ID 和 Key
+    // 补充数据处：binID and url.
     binId: '695f5812ae596e708fccfb72',
     url: 'https://api.jsonbin.io/v3/b/'
 };
 
-// 获取 Key 的逻辑
+// 获取 Key 的逻辑:第一次进入网站时弹窗输入，之后储存在本地缓存中
 function getApiKey() {
     let key = localStorage.getItem('jsonbin_key');
     if (!key) {
@@ -14,8 +15,6 @@ function getApiKey() {
     }
     return key;
 }
-
-// 在 fetch 请求里使用 getApiKey()
 
 // 📥 从云端拉取数据 (读档)
 async function loadFromCloud() {
@@ -56,11 +55,10 @@ async function loadFromCloud() {
 async function saveToCloud() {
     console.log('正在保存到云端...');
     
-    // 收集所有要存的数据
+    // 收集所有要存的数据：待办数据、日历数据和搜索引擎偏好
     const payload = {
         myRichTodos: JSON.parse(localStorage.getItem('myRichTodos') || '[]'),
         calendarEvents: JSON.parse(localStorage.getItem('calendarEvents') || '[]'),
-        // 你还可以把搜索引擎偏好也存进去
         preferredEngine: localStorage.getItem('preferredEngine') || 'google'
     };
 
