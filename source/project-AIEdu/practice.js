@@ -13,6 +13,7 @@ const API_CONFIG = {
     MODEL: 'deepseek-chat'
 };
 
+const STATS_KEY = 'geo_user_stats';
 // 获取当前用户的错题本存储Key
 function getMistakeBookKey() {
     const currentUser = localStorage.getItem('geo_current_user');
@@ -142,8 +143,8 @@ function updateStats() {
     dom.statsEl.textContent = `本次出题 ${state.totalQuestions} 道，答对 ${state.correctAnswers} 道（正确率 ${accuracy}%）。${comment}`;
 }
 
-function renderQuestions(questions) {
-    state.currentQuestions = questions.map(q => ({ ...q, answered: false }));
+function renderQuestions(questions, topic) {
+    state.currentQuestions = questions.map(q => ({ ...q, answered: false, topic: topic || 'mixed' }));
 
     if (!dom.questionArea) return;
     dom.questionArea.innerHTML = '';
@@ -196,6 +197,7 @@ function handleAnswer(qIndex, selectedIndex, buttons, explanationEl) {
         buttons[selectedIndex].classList.add('incorrect');
         saveMistake(q, selectedIndex); // 自动保存错题
     }
+    updateUserStats(q.topic, isCorrect); // 更新用户统计数据
 
     state.totalQuestions++;
     if (isCorrect) state.correctAnswers++;
@@ -213,6 +215,24 @@ function handleAnswer(qIndex, selectedIndex, buttons, explanationEl) {
     }
 
     updateStats();
+}
+
+// ============================================================
+// 6.1 统计数据管理 (Stats Management)
+// ============================================================
+function updateUserStats(topic, isCorrect) {
+    let stats = JSON.parse(localStorage.getItem(STATS_KEY) || '{"totalQuestions":0, "totalCorrect":0, "topics":{}}');
+    
+    if (!stats.topics) stats.topics = {};
+    if (!stats.topics[topic]) stats.topics[topic] = { total: 0, correct: 0 };
+    
+    stats.totalQuestions++;
+    if (isCorrect) stats.totalCorrect++;
+    
+    stats.topics[topic].total++;
+    if (isCorrect) stats.topics[topic].correct++;
+    
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
 }
 
 // ============================================================
@@ -455,10 +475,13 @@ async function fetchQuestionFromDeepSeek() {
 
     // 根据当前选中的主题获取对应的提示词描述
     const topicDescription = TOPIC_MAP[state.selectedTopic] || TOPIC_MAP.mixed;
+    const currentTopic = state.selectedTopic;
 
     try {
         const response = await fetch(API_CONFIG.URL, {
             method: 'POST',
+            mode: 'cors',
+            credentials: 'omit',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${API_CONFIG.KEY}`
@@ -480,13 +503,21 @@ async function fetchQuestionFromDeepSeek() {
             })
         });
 
-        if (!response.ok) throw new Error('网络请求失败：' + response.status);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`API请求失败 (${response.status}): ${errorData.error?.message || '未知错误'}`);
+        }
 
         const data = await response.json();
         let content = data?.choices?.[0]?.message?.content?.trim() || '';
 
-        // 清理 Markdown 标记
-        content = content.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+        // 优化 JSON 提取逻辑：查找第一个 [ 和最后一个 ]，忽略前后的对话文本
+        const jsonStartIndex = content.indexOf('[');
+        const jsonEndIndex = content.lastIndexOf(']');
+        
+        if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+            content = content.substring(jsonStartIndex, jsonEndIndex + 1);
+        }
 
         let list = [];
         try {
@@ -498,13 +529,13 @@ async function fetchQuestionFromDeepSeek() {
 
         if (!Array.isArray(list) || !list.length) throw new Error('返回数据为空或格式不符合约定');
         
-        renderQuestions(list.slice(0, 3));
+        renderQuestions(list.slice(0, 3), currentTopic);
     } catch (err) {
         console.error(err);
         dom.questionArea.innerHTML = `
             <div class="question-container">
                 <div class="question-number">题目加载失败</div>
-                <div class="question-text">无法从 AI 获取题目，请检查网络或稍后重试。</div>
+                <div class="question-text">错误信息：${err.message}<br>请检查网络连接或 API Key 余额。</div>
             </div>
         `;
     } finally {

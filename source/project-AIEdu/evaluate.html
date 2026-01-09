@@ -198,19 +198,19 @@ layout: false
                     <h3>评价指标 (个人)</h3>
                 <div class="evaluation-metrics">
                     <div class="metric-card">
-                        <div class="metric-value">85%</div>
+                        <div class="metric-value" id="metric-principles">--</div>
                         <div class="metric-label">地理原理掌握</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-value">78%</div>
+                        <div class="metric-value" id="metric-analysis">--</div>
                         <div class="metric-label">现象分析能力</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-value">92%</div>
+                        <div class="metric-value" id="metric-participation">--</div>
                         <div class="metric-label">探究活动参与度</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-value">88%</div>
+                        <div class="metric-value" id="metric-application">--</div>
                         <div class="metric-label">知识应用能力</div>
                     </div>
                 </div>
@@ -224,27 +224,27 @@ layout: false
                         <span>地球运动单元整体学习进度</span>
                         <div style="width: 200px;">
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: 75%;"></div>
+                                <div class="progress-fill" id="progress-overall" style="width: 0%;"></div>
                             </div>
-                            <span style="font-size: 12px; color: #666;">75%</span>
+                            <span id="text-overall" style="font-size: 12px; color: #666;">0%</span>
                         </div>
                     </div>
                     <div class="evaluation-item">
                         <span>地球运动原理掌握程度</span>
                         <div style="width: 200px;">
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: 85%;"></div>
+                                <div class="progress-fill" id="progress-principles" style="width: 0%;"></div>
                             </div>
-                            <span style="font-size: 12px; color: #666;">85%</span>
+                            <span id="text-principles" style="font-size: 12px; color: #666;">0%</span>
                         </div>
                     </div>
                     <div class="evaluation-item">
                         <span>自然现象分析能力</span>
                         <div style="width: 200px;">
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: 78%;"></div>
+                                <div class="progress-fill" id="progress-analysis" style="width: 0%;"></div>
                             </div>
-                            <span style="font-size: 12px; color: #666;">78%</span>
+                            <span id="text-analysis" style="font-size: 12px; color: #666;">0%</span>
                         </div>
                     </div>
                 </div>
@@ -254,7 +254,7 @@ layout: false
                     <h3>智能反馈示例</h3>
                 <div class="evaluation-dashboard">
                     <h4>个性化建议</h4>
-                    <ul style="color: #666; line-height: 1.8; margin-left: 20px;">
+                    <ul id="feedback-list" style="color: #666; line-height: 1.8; margin-left: 20px;">
                         <li>你在昼夜交替现象理解方面表现优秀，但在对比分析地球自转与公转的影响时可以更加深入</li>
                         <li>建议多参与AI研讨，增强对地球运动与自然现象关系的理解</li>
                         <li>在探究活动中，可以尝试从多个角度分析地理现象，提升分析的全面性</li>
@@ -353,9 +353,98 @@ layout: false
             // 根据选择显示对应视图
             if (role === 'student') {
                 document.getElementById('studentView').style.display = 'block';
+                loadStudentStats();
             } else {
                 document.getElementById('teacherView').style.display = 'block';
             }
+        }
+
+        function loadStudentStats() {
+            const stats = JSON.parse(localStorage.getItem('geo_user_stats') || 'null');
+            
+            // 如果没有数据，保持默认或显示提示
+            if (!stats) return;
+
+            const calculateRate = (correct, total) => total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            // 1. 地理原理掌握 (对应 topic: principles)
+            const pStats = stats.topics['principles'] || { total: 0, correct: 0 };
+            const pRate = calculateRate(pStats.correct, pStats.total);
+            document.getElementById('metric-principles').textContent = pRate + '%';
+            document.getElementById('progress-principles').style.width = pRate + '%';
+            document.getElementById('text-principles').textContent = pRate + '%';
+
+            // 2. 现象分析能力 (对应 topic: day_night + seasons)
+            const dnStats = stats.topics['day_night'] || { total: 0, correct: 0 };
+            const sStats = stats.topics['seasons'] || { total: 0, correct: 0 };
+            const analysisTotal = dnStats.total + sStats.total;
+            const analysisCorrect = dnStats.correct + sStats.correct;
+            const analysisRate = calculateRate(analysisCorrect, analysisTotal);
+            document.getElementById('metric-analysis').textContent = analysisRate + '%';
+            document.getElementById('progress-analysis').style.width = analysisRate + '%';
+            document.getElementById('text-analysis').textContent = analysisRate + '%';
+
+            // 3. 知识应用能力 (对应 topic: application)
+            const aStats = stats.topics['application'] || { total: 0, correct: 0 };
+            const aRate = calculateRate(aStats.correct, aStats.total);
+            document.getElementById('metric-application').textContent = aRate + '%';
+
+            // 4. 探究活动参与度 (简单模拟：每答1题增加5%，最高100%)
+            const participationRate = Math.min(100, stats.totalQuestions * 5);
+            document.getElementById('metric-participation').textContent = participationRate + '%';
+
+            // 5. 整体学习进度 (总正确率)
+            const overallRate = calculateRate(stats.totalCorrect, stats.totalQuestions);
+            document.getElementById('progress-overall').style.width = overallRate + '%';
+            document.getElementById('text-overall').textContent = overallRate + '%';
+            
+            // 生成智能反馈
+            generateFeedback(stats);
+        }
+
+        function generateFeedback(stats) {
+            const feedbackList = document.getElementById('feedback-list');
+            if (!feedbackList) return;
+            
+            feedbackList.innerHTML = ''; // 清空静态内容
+            const suggestions = [];
+
+            // 辅助函数：获取某主题的正确率，未做过返回 -1
+            const getRate = (topic) => {
+                const t = stats.topics[topic];
+                if (!t || t.total === 0) return -1;
+                return (t.correct / t.total) * 100;
+            };
+
+            // 1. 检查练习量
+            if (stats.totalQuestions < 5) {
+                suggestions.push('你的练习数据较少，建议多做几组“练一练”题目，以便生成更准确的评价。');
+            }
+
+            // 2. 检查薄弱环节 (< 60%)
+            const weakTopics = [];
+            if (getRate('principles') !== -1 && getRate('principles') < 60) weakTopics.push('地理原理');
+            if (getRate('day_night') !== -1 && getRate('day_night') < 60) weakTopics.push('昼夜交替');
+            if (getRate('seasons') !== -1 && getRate('seasons') < 60) weakTopics.push('四季变化');
+            if (getRate('application') !== -1 && getRate('application') < 60) weakTopics.push('知识应用');
+
+            if (weakTopics.length > 0) {
+                suggestions.push(`你在 ${weakTopics.join('、')} 方面的掌握程度有待提高，建议复习相关课程视频或使用“研一研”功能咨询AI老师。`);
+            }
+
+            // 3. 检查未涉足领域
+            if (getRate('application') === -1) suggestions.push('建议尝试挑战一下“应用拓展”类型的题目，检测知识迁移能力。');
+            
+            // 4. 默认鼓励
+            if (suggestions.length === 0) {
+                suggestions.push('目前的学习状态比较平稳，各模块掌握情况良好，建议定期进行综合测试巩固成果。');
+            }
+
+            suggestions.forEach(text => {
+                const li = document.createElement('li');
+                li.textContent = text;
+                feedbackList.appendChild(li);
+            });
         }
     </script>
 </body>

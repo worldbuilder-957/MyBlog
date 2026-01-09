@@ -86,6 +86,19 @@ layout: false
             font-size: 24px;
             margin-bottom: 10px;
         }
+        /* 交互样式 */
+        .topic-btn {
+            transition: all 0.3s ease;
+            opacity: 0.9;
+        }
+        .topic-btn:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+        .topic-btn.active {
+            background: #a04000 !important;
+            box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -175,13 +188,29 @@ layout: false
                 <div class="writing-assistant">
                     <h4>AI写作助手</h4>
                     <p>欢迎使用AI写作助手！请选择你要写作的类型，我将为你提供帮助：</p>
-                    <div style="display: flex; gap: 10px; margin: 15px 0;">
-                        <button style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">昼夜交替分析</button>
-                        <button style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">探究心得体会</button>
-                        <button style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">地球公转分析</button>
-                        <button style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">地球自转分析</button>
+                    <div id="topic-buttons" style="display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap;">
+                        <button class="topic-btn" onclick="selectTopic(this, '昼夜交替分析')" style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">昼夜交替分析</button>
+                        <button class="topic-btn" onclick="selectTopic(this, '探究心得体会')" style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">探究心得体会</button>
+                        <button class="topic-btn" onclick="selectTopic(this, '地球公转分析')" style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">地球公转分析</button>
+                        <button class="topic-btn" onclick="selectTopic(this, '地球自转分析')" style="padding: 8px 15px; background: #d35400; color: white; border: none; border-radius: 5px; cursor: pointer;">地球自转分析</button>
                     </div>
-                    <p style="font-size: 14px; color: #666;">选择类型后，输入你的写作思路，AI将为你提供写作建议和内容优化。</p>
+                    
+                    <div id="input-area" style="display: none; margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 20px;">
+                        <p style="margin-bottom: 10px;"><strong>当前主题：</strong><span id="current-topic-display" style="color: #d35400;"></span></p>
+                        <textarea id="user-idea" placeholder="请输入你的写作思路、草稿或关键词（例如：我想分析昼夜交替对生物钟的影响...）" style="width: 100%; height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"></textarea>
+                        <button id="generate-btn" onclick="generateSuggestion()" style="margin-top: 10px; padding: 10px 25px; background: #2c3e50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 15px;">✨ 生成写作建议</button>
+                    </div>
+
+                    <div id="result-area" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="color: #2c3e50; margin: 0;">🤖 AI 建议与优化</h4>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="copyContent()" style="padding: 5px 10px; font-size: 12px; cursor: pointer; background: #ecf0f1; border: 1px solid #bdc3c7; border-radius: 4px; color: #333;">📋 复制内容</button>
+                                <button onclick="exportContent()" style="padding: 5px 10px; font-size: 12px; cursor: pointer; background: #ecf0f1; border: 1px solid #bdc3c7; border-radius: 4px; color: #333;">💾 导出文本</button>
+                            </div>
+                        </div>
+                        <div id="ai-content" style="line-height: 1.8; color: #444; white-space: pre-wrap;"></div>
+                    </div>
                 </div>
             </div>
             
@@ -195,5 +224,153 @@ layout: false
             </div>
         </div>
     </div>
+
+    <script>
+        const API_CONFIG = {
+            URL: 'https://api.deepseek.com/v1/chat/completions',
+            KEY: 'sk-64e582e67c9e4f7b89e67602b6670c4d', // 注意：生产环境中建议通过后端转发以保护密钥
+            MODEL: 'deepseek-chat'
+        };
+
+        let currentTopic = '';
+
+        function selectTopic(btn, topic) {
+            currentTopic = topic;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 显示输入区域
+            document.getElementById('input-area').style.display = 'block';
+            document.getElementById('current-topic-display').textContent = topic;
+            document.getElementById('result-area').style.display = 'none';
+            
+            // 聚焦输入框
+            document.getElementById('user-idea').focus();
+        }
+
+        async function generateSuggestion() {
+            const userIdea = document.getElementById('user-idea').value.trim();
+            if (!userIdea) {
+                alert('请输入你的写作思路！');
+                return;
+            }
+
+            const btn = document.getElementById('generate-btn');
+            const resultArea = document.getElementById('result-area');
+            const aiContent = document.getElementById('ai-content');
+
+            btn.disabled = true;
+            btn.textContent = '正在思考中...';
+            
+            // 显示结果区域并清空内容，准备接收流式输出
+            resultArea.style.display = 'block';
+            aiContent.textContent = '';
+
+            try {
+                const response = await fetch(API_CONFIG.URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    credentials: 'omit',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: API_CONFIG.MODEL,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是一名专业的地理科学写作辅导老师。请根据学生选择的写作主题和提供的思路，给出具体的写作结构建议、科学知识点补充以及内容优化方向。回答要条理清晰，分点阐述，语气亲切鼓励。'
+                            },
+                            {
+                                role: 'user',
+                                content: `写作主题：${currentTopic}\n学生思路：${userIdea}\n\n请给出写作建议和优化方案。`
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2000,
+                        stream: true // 开启流式输出
+                    })
+                });
+
+                if (!response.ok) {
+                    // 尝试解析 API 返回的错误信息
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(`API请求失败 (${response.status}): ${errorData.error?.message || '未知错误'}`);
+                }
+
+                // 处理流式响应
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // 保留最后一行可能不完整的数据
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed) continue;
+                        if (trimmed.startsWith('data: ')) {
+                            const dataStr = trimmed.slice(6);
+                            if (dataStr === '[DONE]') break;
+                            try {
+                                const data = JSON.parse(dataStr);
+                                const content = data.choices[0]?.delta?.content || '';
+                                if (content) {
+                                    aiContent.textContent += content;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing stream chunk:', e);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                let msg = error.message;
+                if (msg === 'Failed to fetch') {
+                    msg = '网络请求失败。请检查网络连接，或确认API Key是否有效（可能存在跨域限制）。';
+                }
+                alert('生成建议失败：' + msg);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ 生成写作建议';
+            }
+        }
+
+        function copyContent() {
+            const content = document.getElementById('ai-content').innerText;
+            if (!content) return;
+            
+            navigator.clipboard.writeText(content).then(() => {
+                alert('内容已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请尝试手动复制。');
+            });
+        }
+
+        function exportContent() {
+            const content = document.getElementById('ai-content').innerText;
+            if (!content) return;
+
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AI写作建议_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
 </body>
 </html>
