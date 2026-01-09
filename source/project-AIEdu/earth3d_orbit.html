@@ -118,7 +118,6 @@ layout: false
         let solsticePoints = []; // 四至点标记
         let orbitGroup; // 轨道组
         let sunDirectionalLight; // 太阳方向光（用于照亮地球）
-        let stars; // 星星粒子系统
         let controls; // dat.GUI 控制对象
 
         // 控制参数
@@ -143,52 +142,12 @@ layout: false
         // 当前公转角度
         let currentOrbitAngle = 0;
 
-        
-
         // ==================== 初始化场景 ====================
         function init() {
             // 创建场景
             scene = new THREE.Scene();
-            // 先设置默认黑色背景
+            // 设置默认黑色背景
             scene.background = new THREE.Color(0x000000);
-            
-            // 加载星空背景图片
-            const textureLoader = new THREE.TextureLoader();
-            let backgroundLoaded = false;
-            
-            textureLoader.load(
-                'star.png',
-                function(texture) {
-                    // 纹理加载成功，设置为场景背景
-                    backgroundLoaded = true;
-                    scene.background = texture;
-                    console.log('星空背景图片加载成功');
-                },
-                undefined,
-                function(err) {
-                    // 纹理加载失败，立即创建粒子星星
-                    console.error('星空背景图片加载失败，错误:', err);
-                    backgroundLoaded = false;
-                    scene.background = new THREE.Color(0x000000);
-                    createStars();
-                }
-            );
-            
-            // 延迟检查：如果2秒后背景仍然是纯黑色，说明图片加载失败，创建粒子星星
-            // 这是一个备用机制，防止错误回调没有触发
-            setTimeout(function() {
-                if (!backgroundLoaded) {
-                    // 检查背景是否仍然是纯黑色
-                    const isBlack = scene.background && 
-                                   ((scene.background.isColor && scene.background.getHex() === 0x000000) ||
-                                    (scene.background && !scene.background.isTexture));
-                    if (isBlack) {
-                        console.log('背景图片加载超时，创建粒子星星系统');
-                        scene.background = new THREE.Color(0x000000);
-                        createStars();
-                    }
-                }
-            }, 2000);
 
             // 创建相机（透视相机）
             camera = new THREE.PerspectiveCamera(
@@ -535,4 +494,3 @@ layout: false
     </script>
 </body>
 </html>
-
