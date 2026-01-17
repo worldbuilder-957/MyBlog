@@ -778,12 +778,29 @@ function refreshCalendarData() {
 
     // 添加待排期任务
     todos.forEach(todo => {
-        if (!todo.date && !todo.done) { // 只显示未完成且无日期的
-            const div = document.createElement('div');
-            div.className = 'draggable-item';
-            div.setAttribute('data-id', todo.id);
-            div.innerText = todo.text;
-            containerEl.appendChild(div);
+        if (!todo.done) {
+            // 1. 如果没有日期 -> 放进左侧待排期区域
+            if (!todo.date) {
+                if (containerEl) {
+                    const div = document.createElement('div');
+                    div.className = 'draggable-item';
+                    div.setAttribute('data-id', todo.id);
+                    div.innerText = todo.text;
+                    containerEl.appendChild(div);
+                }
+            } 
+            // 2. 如果有日期 -> 直接渲染在日历上
+            else {
+                calendarInstance.addEvent({
+                    id: todo.id,
+                    title: todo.text,
+                    start: todo.date,
+                    allDay: !todo.date.includes('T'), // 简单判断：无时间则全天
+                    backgroundColor: '#10b981',       // 绿色区分待办
+                    borderColor: '#10b981',
+                    extendedProps: { isTodo: true }
+                });
+            }
         }
     });
 }
