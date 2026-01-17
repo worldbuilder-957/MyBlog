@@ -56,6 +56,55 @@ layout: false
             <div class="corner-text bottom-right" id="corner-school-week">Loading...</div>
         </div>
 
+        <div class="card calendar-entry" onclick="openCalendarView()">
+            <div class="cal-icon-wrapper">
+                <i class="ri-calendar-todo-fill"></i>
+            </div>
+
+            <div class="cal-info">
+                <span class="cal-title">日程与计划</span>
+                <span class="cal-desc">点击进入全屏管理</span>
+            </div>
+
+            <div class="cal-arrow">
+                <i class="ri-arrow-right-s-line"></i>
+            </div>
+        </div>
+
+        <div class="card weather-card">
+            <div class="weather-info">
+                <div class="temp" id="weather-temp">--°</div>
+                <div class="meta">
+                    <span class="city">ZhuHai</span>
+                    <span id="weather-text">Loading...</span>
+                </div>
+            </div>
+            <i class="ri-sun-cloudy-line weather-icon" id="weather-icon"></i>
+        </div>
+
+        <div class="card stock-card">
+            <div class="stock-tabs">
+                <button class="stock-btn active" onclick="changeStock('sh000001', this)">上证</button>
+                <button class="stock-btn" onclick="changeStock('sz399001', this)">深证</button>
+                <button class="stock-btn" onclick="changeStock('sz399006', this)">创业板</button>
+                <button class="stock-btn" onclick="changeStock('usr_dji', this)">Dow Jones</button>
+                <button class="stock-btn" onclick="changeStock('usr_ixic', this)">Nasdaq</button>
+                <button class="stock-btn" onclick="changeStock('usr_inx', this)">S&P 500</button>
+            </div>
+
+            <div class="stock-display">
+                <img id="stock-image" src="http://image.sinajs.cn/newchart/min/n/sh000001.gif" alt="Stock Chart">
+            </div>
+        </div>
+
+        <div class="card links-card">
+            <div class="card-title">
+                <i class="ri-apps-2-line"></i> 常用应用
+            </div>
+            
+            <div class="app-grid" id="app-grid"></div>
+        </div>
+
         <div class="card todo-card">
             <div class="card-title">
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -111,55 +160,6 @@ layout: false
                 </div>
             </div>
         </dialog>
-
-        <div class="card weather-card">
-            <div class="weather-info">
-                <div class="temp" id="weather-temp">--°</div>
-                <div class="meta">
-                    <span class="city">ZhuHai</span>
-                    <span id="weather-text">Loading...</span>
-                </div>
-            </div>
-            <i class="ri-sun-cloudy-line weather-icon" id="weather-icon"></i>
-        </div>
-
-        <div class="card stock-card">
-            <div class="stock-tabs">
-                <button class="stock-btn active" onclick="changeStock('sh000001', this)">上证</button>
-                <button class="stock-btn" onclick="changeStock('sz399001', this)">深证</button>
-                <button class="stock-btn" onclick="changeStock('sz399006', this)">创业板</button>
-                <button class="stock-btn" onclick="changeStock('usr_dji', this)">Dow Jones</button>
-                <button class="stock-btn" onclick="changeStock('usr_ixic', this)">Nasdaq</button>
-                <button class="stock-btn" onclick="changeStock('usr_inx', this)">S&P 500</button>
-            </div>
-
-            <div class="stock-display">
-                <img id="stock-image" src="http://image.sinajs.cn/newchart/min/n/sh000001.gif" alt="Stock Chart">
-            </div>
-        </div>
-
-        <div class="card links-card">
-            <div class="card-title">
-                <i class="ri-apps-2-line"></i> 常用应用
-            </div>
-            
-            <div class="app-grid" id="app-grid"></div>
-        </div>
-
-        <div class="card calendar-entry" onclick="openCalendarView()">
-            <div class="cal-icon-wrapper">
-                <i class="ri-calendar-todo-fill"></i>
-            </div>
-
-            <div class="cal-info">
-                <span class="cal-title">日程与计划</span>
-                <span class="cal-desc">点击进入全屏管理</span>
-            </div>
-
-            <div class="cal-arrow">
-                <i class="ri-arrow-right-s-line"></i>
-            </div>
-        </div>
     </div>
     
     <dialog id="calendarModal" class="full-screen-modal">
