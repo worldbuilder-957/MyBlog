@@ -639,13 +639,33 @@ function initCalendarSystem() {
 
         // 📅 核心：当在日历里移动任务时
         eventDrop: function(info) {
-            updateTodoDate(info.event.id, info.event.startStr);
+            // 1. 尝试作为普通日历事件更新
+            let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+            const eventIndex = events.findIndex(e => e.id === info.event.id);
+            
+            if (eventIndex !== -1) {
+                events[eventIndex].start = info.event.startStr;
+                events[eventIndex].end = info.event.endStr; // 移动时，结束时间也会相应平移
+                saveToStorage(events);
+                saveToCloud();
+            } else {
+                // 2. 如果找不到，说明可能是 Todo 拖进来的
+                updateTodoDate(info.event.id, info.event.startStr);
+            }
         },
         
         // 🔄 核心：拉伸任务改变时长时
         eventResize: function(info) {
-             // 暂时我们只存开始时间，如果需要存时长，逻辑类似
-             console.log("任务时长变了");
+             let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+             const eventIndex = events.findIndex(e => e.id === info.event.id);
+             
+             if (eventIndex !== -1) {
+                 events[eventIndex].start = info.event.startStr;
+                 events[eventIndex].end = info.event.endStr;
+                 saveToStorage(events);
+                 saveToCloud();
+                 console.log("任务时长已更新");
+             }
         },
         
         // 📝 核心：点击日历单元格创建事件
@@ -813,6 +833,11 @@ function closeCalendar() {
 // 📝 事件编辑模态框控制
 function openEventModal(startDate = null) {
     const modal = document.getElementById('eventModal');
+    
+    // 隐藏删除按钮 (新建模式)
+    const deleteBtn = document.getElementById('deleteEventBtn');
+    if (deleteBtn) deleteBtn.style.display = 'none';
+
     const eventStart = document.getElementById('eventStart');
     const eventEnd = document.getElementById('eventEnd');
     
@@ -852,6 +877,25 @@ function openEventModal(startDate = null) {
 function openEventModalForEdit(event) {
     const modal = document.getElementById('eventModal');
     
+    // 注入或显示删除按钮
+    let deleteBtn = document.getElementById('deleteEventBtn');
+    if (!deleteBtn) {
+        const footer = modal.querySelector('.modal-actions');
+        if (footer) {
+            deleteBtn = document.createElement('button');
+            deleteBtn.id = 'deleteEventBtn';
+            deleteBtn.type = 'button';
+            deleteBtn.innerText = '删除';
+            deleteBtn.className = 'btn';
+            deleteBtn.style.backgroundColor = '#ef4444'; // 红色警示
+            deleteBtn.style.color = '#ffffff';
+            deleteBtn.style.marginRight = 'auto'; // 居左显示，与保存按钮分开
+            deleteBtn.onclick = deleteEvent;
+            footer.prepend(deleteBtn);
+        }
+    }
+    if (deleteBtn) deleteBtn.style.display = 'block';
+
     // 确保 extendedProps 存在，兼容旧数据
     const extendedProps = event.extendedProps || {};
     
