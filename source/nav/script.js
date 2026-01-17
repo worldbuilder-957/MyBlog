@@ -1,5 +1,5 @@
-// #region 0. 云同步核心配置=========================
-//使用网站：JSONbin
+// #region 1. 数据云同步配置=========================
+// 使用网站：JSONbin
 const BIN_CONFIG = {
     // 补充数据处：binID and url.
     binId: '695f5812ae596e708fccfb72',
@@ -16,7 +16,7 @@ function getApiKey() {
     return key;
 }
 
-// 📥 从云端拉取数据 (读档)
+// 1.1 从云端拉取数据 (读档)
 async function loadFromCloud() {
     console.log('正在从云端同步数据...');
     try {
@@ -51,7 +51,7 @@ async function loadFromCloud() {
     }
 }
 
-// 📤 推送到云端 (存档)
+// 1.2 推送到云端 (存档)
 async function saveToCloud() {
     console.log('正在保存到云端...');
     
@@ -81,7 +81,7 @@ async function saveToCloud() {
 }
 // #endregion =================================================
 
-// #region 1. 时钟功能模块=======================================================
+// #region 2. 时钟功能模块=======================================================
 function updateTime() {
     const now = new Date();
     document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute:'2-digit',second:"2-digit"});
@@ -91,7 +91,8 @@ setInterval(updateTime, 1000);
 updateTime();
 // #endregion =================================================================
 
-// #region 2. 日历功能模块 (多时期版)=======================================================
+// #region 3. 日历功能模块=======================================================
+// 功能：用于显示当前学期周数和全年周数，实现多时期同步显示
 function updateCalendar() {
     const now = new Date();
     
@@ -177,7 +178,8 @@ updateCalendar();
 setInterval(updateCalendar, 60 * 60 * 1000);
 // #endregion =================================================================
 
-// #region 3. 超级待办事项 (Pro版)======================================================
+// #region 4. 超级待办事项======================================================
+// 该模块实现一个待办事项系统，支持标题、日期、地点、标签等多种属性
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
 
@@ -289,8 +291,8 @@ function closeTaskModal() { modal.close(); }
 renderTodos();
 // #endregion ================================================================= 
 
-// #region 4. 天气功能==============================================
-// 该模块通过API接入和风天气，获取珠海当前天气信息，并更新页面显示
+// #region 5. 天气温度功能==============================================
+// 该模块通过API接入和风天气，获取珠海当前天气与温度信息，并更新页面显示
 async function fetchWeather() {
     const apiKey = '4dce09f66f4c46c1a5d5f631f019290e'; // 这里填和风天气的 apiKey
     const locationID = '101280701'; // 珠海的ID
@@ -351,8 +353,8 @@ if ('serviceWorker' in navigator) {
 }
 // #endregion =================================================================
 
-// #region 5. PWA 安装提示===========================================================
-  let deferredPrompt;                                     // 用来存浏览器的“安装票据”
+// #region 6. PWA 安装提示===========================================================
+  let deferredPrompt;                                       // 用来存浏览器的“安装票据”
   const installBtn = document.getElementById('install-btn');
 
   // 1. 监听浏览器的“可安装”事件
@@ -404,7 +406,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/nav/sw.js', { scope: '/nav/' })
 // #endregion ================================================================= 
 
-// #region 6. 股票模块 (新浪静态图版) =========================
+// #region 7. 股票模块 (新浪静态图版) =========================
 function changeStock(code, btnElement) {
     const img = document.getElementById('stock-image');
     
@@ -437,7 +439,7 @@ setInterval(() => {
 
 // #endregion ==================================
 
-// #region 7. 快捷链接模块 (Wetab风格) =========================
+// #region 8. 快捷链接模块 (Wetab风格) =========================
 
 // 1. 定义应用数据 (你想加什么就在这里写，不用动 HTML)
 const apps = [
@@ -474,10 +476,85 @@ renderApps();
 
 // #endregion =================================
 
-// #region 8. 日历系统逻辑 =========================
+// #region 9. 日历系统逻辑 =========================
 
 let calendarInstance = null; // 保存日历实例
 let currentEventId = null; // 当前编辑的事件ID
+
+// --- 🎨 新增：颜色分类配置 ---
+const EVENT_COLORS = [
+    { name: '默认', value: '#6b7280' }, // 灰色
+    { name: '工作', value: '#3b82f6' }, // 蓝色
+    { name: '生活', value: '#10b981' }, // 绿色
+    { name: '重要', value: '#ef4444' }, // 红色
+    { name: '学习', value: '#8b5cf6' }  // 紫色
+];
+
+// 辅助：注入颜色选择器 UI (自动插在"备注"前面)
+function injectColorPicker() {
+    if (document.getElementById('eventColorPicker')) return;
+
+    const descEl = document.getElementById('eventDescription');
+    if (!descEl) return;
+    
+    // 找到 description 的父容器 (form-group)，插在它前面
+    const targetContainer = descEl.closest('.form-group') || descEl.parentNode;
+    
+    const container = document.createElement('div');
+    container.id = 'eventColorPicker';
+    container.className = 'form-group';
+    
+    const label = document.createElement('label');
+    label.innerText = '颜色标记';
+    container.appendChild(label);
+    
+    const swatches = document.createElement('div');
+    swatches.style.display = 'flex';
+    swatches.style.gap = '12px';
+    swatches.style.marginTop = '5px';
+    
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.id = 'eventColorInput';
+    container.appendChild(hiddenInput);
+
+    EVENT_COLORS.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.setAttribute('data-value', color.value);
+        swatch.style.width = '24px';
+        swatch.style.height = '24px';
+        swatch.style.borderRadius = '50%';
+        swatch.style.backgroundColor = color.value;
+        swatch.style.cursor = 'pointer';
+        swatch.style.border = '2px solid transparent';
+        swatch.style.transition = 'transform 0.2s';
+        swatch.title = color.name;
+        
+        swatch.onclick = () => selectColor(color.value);
+        
+        swatches.appendChild(swatch);
+    });
+    
+    container.appendChild(swatches);
+    targetContainer.parentNode.insertBefore(container, targetContainer);
+}
+
+// 辅助：选中颜色逻辑
+function selectColor(value) {
+    const input = document.getElementById('eventColorInput');
+    if(input) input.value = value;
+    
+    document.querySelectorAll('.color-swatch').forEach(s => {
+        if (s.getAttribute('data-value') === value) {
+            s.style.border = '2px solid #333';
+            s.style.transform = 'scale(1.2)';
+        } else {
+            s.style.border = '2px solid transparent';
+            s.style.transform = 'scale(1)';
+        }
+    });
+}
 
 // 🚀 核心启动函数
 function initCalendarSystem() {
@@ -498,23 +575,23 @@ function initCalendarSystem() {
 
     // 2. 初始化右侧"日历"
     calendarInstance = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek', // 周视图 
+        initialView: 'timeGridWeek',   // 周视图 
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridThreeDay,timeGridWeek,timeGridDay' // 月视图、三日视图、周视图、日视图
         },
         locale: 'zh-cn',
-        firstDay: 1, // 周一开头
-        height: '100%', // 自适应高度
-        aspectRatio: 1.8, // 设置宽高比
-        editable: true,     // 允许在日历里拖动
-        droppable: true,    // ✨ 允许从外部拖进去！
+        firstDay: 1,                   // 周一开头
+        height: '100%',                // 自适应高度
+        aspectRatio: 1.8,              // 设置宽高比
+        editable: true,                // 允许在日历里拖动
+        droppable: true,               // 允许从外部拖拽
         //plugins: ['rrule'], 理应集成RRule插件，但Gemini说这一行要注释掉
         // 时间网格配置 - 确保时间轴显示
-        slotMinTime: '00:00:00', // 最早显示时间
-        slotMaxTime: '24:00:00', // 最晚显示时间
-        slotDuration: '00:30:00', // 时间间隔（30分钟）
+        slotMinTime: '00:00:00',       // 最早显示时间
+        slotMaxTime: '24:00:00',       // 最晚显示时间
+        slotDuration: '00:30:00',      // 时间间隔（30分钟）
         slotLabelInterval: '01:00:00', // 标签间隔（1小时）
         allDaySlot: true, // 显示全天事件区域
         // 自定义视图配置
@@ -746,6 +823,10 @@ function openEventModal(startDate = null) {
     document.getElementById('eventRepeat').value = '';
     document.getElementById('eventDescription').value = '';
     
+    // 🎨 注入并重置颜色
+    injectColorPicker();
+    selectColor(EVENT_COLORS[0].value);
+
     // 设置默认时间
     if (startDate) {
         eventStart.value = formatDateForInput(new Date(startDate));
@@ -781,6 +862,11 @@ function openEventModalForEdit(event) {
     document.getElementById('eventReminder').value = extendedProps.reminder || '0';
     document.getElementById('eventDescription').value = extendedProps.description || '';  // 确保备注正确读取
     
+    // 🎨 注入并设置当前颜色
+    injectColorPicker();
+    const currentColor = event.backgroundColor || EVENT_COLORS[0].value;
+    selectColor(currentColor);
+
     // 设置重复规则
     if (event.rrule) {
         let repeatValue = '';
@@ -829,6 +915,7 @@ function saveEvent() {
         const reminder = parseInt(document.getElementById('eventReminder').value) || 0;
         const repeat = document.getElementById('eventRepeat').value;
         const description = document.getElementById('eventDescription').value.trim();  // 读取备注并去除首尾空格
+        const color = document.getElementById('eventColorInput').value || EVENT_COLORS[0].value; // 获取颜色
         
         // 验证必填字段
         if (!title || !start || !end) {
@@ -856,6 +943,8 @@ function saveEvent() {
             title: title,
             start: start,
             end: end,
+            backgroundColor: color, // 🎨 保存背景色
+            borderColor: color,     // 🎨 边框同色
             extendedProps: {
                 location: location || '',
                 reminder: reminder || 0,
@@ -959,7 +1048,30 @@ function saveEvent() {
     }
 }
 
-// 🛠️ 辅助函数：格式化日期为input类型的datetime-local格式
+// �️ 删除事件
+function deleteEvent() {
+    if (!currentEventId) return;
+    
+    if (confirm('确定要删除这个事件吗？')) {
+        // 1. 从本地存储移除
+        let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+        events = events.filter(e => e.id !== currentEventId);
+        saveToStorage(events);
+        
+        // 2. 从日历视图移除
+        if (calendarInstance) {
+            const event = calendarInstance.getEventById(currentEventId);
+            if (event) event.remove();
+        }
+        
+        // 3. 关闭弹窗并同步
+        closeEventModal();
+        saveToCloud();
+        console.log('事件已删除:', currentEventId);
+    }
+}
+
+// �🛠️ 辅助函数：格式化日期为input类型的datetime-local格式
 function formatDateForInput(date) {
     if (typeof date === 'string') {
         date = new Date(date);
@@ -976,26 +1088,30 @@ function formatDateForInput(date) {
 
 // #endregion
 
-// #region 9. 搜索引擎及搜索功能实现 ========================
+// #region 10. 搜索引擎及搜索功能实现 ========================
 
 // 1. 定义引擎配置
 const searchEngines = {
-    bing: {
+    Bing: {
         url: "https://cn.bing.com/search?q=",
         icon: "ri-search-fill"
     },
-    google: {
+    Google: {
         url: "https://www.google.com/search?q=",
         icon: "ri-google-fill"
     },
-    baidu: {
+    Baidu: {
         url: "https://www.baidu.com/s?wd=",
         icon: "ri-baidu-fill"
+    },
+    Yandex: {
+        url: "https://yandex.com/search/?text=",
+        icon: "ri-yandex-fill"
     }
 };
 
 // 默认引擎 (你可以改成 google 或 baidu)
-let currentEngine = 'google';
+let currentEngine = 'Google';
 
 // 2. 切换下拉菜单显示/隐藏
 function toggleEngineList(e) {
@@ -1047,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // #endregion
 
-// #region 10. 自动启动项 =========================
+// #region 11. 自动启动项 =========================
 // 页面加载 1 秒后尝试自动从云端拉取数据
 setTimeout(() => {
     // 确保 loadFromCloud 函数存在（防止报错）
