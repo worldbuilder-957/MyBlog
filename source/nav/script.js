@@ -585,6 +585,28 @@ function initCalendarSystem() {
             center: 'title',
             right: 'dayGridMonth,timeGridThreeDay,timeGridWeek,timeGridDay' // 月视图、三日视图、周视图、日视图
         },
+        // 🎨 自定义标题格式：2026年1月（Wxx）
+        datesSet: function(info) {
+            if (info.view.type === 'dayGridMonth') return; // 月视图保持默认
+
+            const titleEl = calendarEl.querySelector('.fc-toolbar-title');
+            if (!titleEl) return;
+
+            // 取视图中间的日期来决定显示哪个月/年（防止跨月时显示上个月）
+            let targetDate = new Date(info.view.currentStart);
+            if (info.view.type === 'timeGridWeek') {
+                targetDate.setDate(targetDate.getDate() + 3);
+            } else if (info.view.type === 'timeGridThreeDay') {
+                targetDate.setDate(targetDate.getDate() + 1);
+            }
+
+            const year = targetDate.getFullYear();
+            const month = targetDate.getMonth() + 1;
+            const startOfYear = new Date(year, 0, 1);
+            const weekOfYear = Math.ceil((((targetDate - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
+
+            titleEl.innerText = `${year}年${month}月（W${weekOfYear}）`;
+        },
         locale: 'zh-cn',
         firstDay: 1,                   // 周一开头
         height: '100%',                // 自适应高度

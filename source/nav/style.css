@@ -940,9 +940,10 @@ body {
 }
 
 .fc-timegrid-event .fc-event-title {
-    white-space: nowrap !important;
+    white-space: normal !important;          /* 允许文字换行 */
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    text-overflow: ellipsis !important;      /* 超出部分显示省略号 */
+    word-break: break-word ;
 }
 
 .fc-day-today {
