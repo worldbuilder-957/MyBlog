@@ -739,7 +739,8 @@ body {
 /* #region --- 8.1 全屏弹窗容器 --- */
 .full-screen-modal {
     position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;   /* 👈 修改：改用 100% 避免视口单位计算误差 */
+    overflow: hidden;            /* 👈 新增：核心代码，强制隐藏弹窗自身的滚动条 */
     background: rgba(244, 244, 244, 0.98);       /* 白色背景，高透明度 */
     z-index: 9999;
     border: none; padding: 0; margin: 0;

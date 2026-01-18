@@ -826,6 +826,7 @@ function saveToStorage(events) {
 
 // 🚪 界面操作：打开/关闭日历
 function openCalendarView() {
+    document.documentElement.style.overflow = 'hidden'; // 👈 新增：锁定 html 根元素
     document.body.style.overflow = 'hidden'; // 👈 新增：打开时禁止背景滚动
     const modal = document.getElementById('calendarModal');
     modal.showModal(); // 显示弹窗
@@ -845,6 +846,7 @@ function openCalendarView() {
 }
 
 function closeCalendar() {
+    document.documentElement.style.overflow = ''; // 👈 新增：解锁 html 根元素
     document.body.style.overflow = ''; // 👈 新增：关闭时恢复背景滚动
     document.getElementById('calendarModal').close();
 }
