@@ -561,6 +561,10 @@ function initCalendarSystem() {
     const calendarEl = document.getElementById('calendar');
     const containerEl = document.getElementById('external-events');
     
+    // 读取用户偏好的时间范围 (默认 00:00 - 24:00)
+    const savedMin = localStorage.getItem('calMinTime') || '00:00:00';
+    const savedMax = localStorage.getItem('calMaxTime') || '24:00:00';
+
     // 1. 初始化左侧“可拖拽区域”
     new FullCalendar.Draggable(containerEl, {
         itemSelector: '.draggable-item',
@@ -589,8 +593,8 @@ function initCalendarSystem() {
         droppable: true,               // 允许从外部拖拽
         //plugins: ['rrule'], 理应集成RRule插件，但Gemini说这一行要注释掉
         // 时间网格配置 - 确保时间轴显示
-        slotMinTime: '00:00:00',       // 最早显示时间
-        slotMaxTime: '24:00:00',       // 最晚显示时间
+        slotMinTime: savedMin,       // 最早显示时间
+        slotMaxTime: savedMax,       // 最晚显示时间
         slotDuration: '00:30:00',      // 时间间隔（30分钟）
         slotLabelInterval: '01:00:00', // 标签间隔（1小时）
         allDaySlot: true, // 显示全天事件区域
@@ -603,22 +607,22 @@ function initCalendarSystem() {
                 type: 'timeGrid',
                 duration: { days: 3 },
                 buttonText: '三日',
-                slotMinTime: '00:00:00',
-                slotMaxTime: '24:00:00',
+                slotMinTime: savedMin,
+                slotMaxTime: savedMax,
                 slotDuration: '00:30:00',
                 slotLabelInterval: '01:00:00'
             },
             timeGridWeek: {
                 buttonText: '周',
-                slotMinTime: '00:00:00',
-                slotMaxTime: '24:00:00',
+                slotMinTime: savedMin,
+                slotMaxTime: savedMax,
                 slotDuration: '00:30:00',
                 slotLabelInterval: '01:00:00'
             },
             timeGridDay: {
                 buttonText: '日',
-                slotMinTime: '00:00:00',
-                slotMaxTime: '24:00:00',
+                slotMinTime: savedMin,
+                slotMaxTime: savedMax,
                 slotDuration: '00:30:00',
                 slotLabelInterval: '01:00:00'
             }
@@ -693,6 +697,30 @@ function initCalendarSystem() {
             calendarInstance.changeView(currentView.type);
         }
     }, 300);
+}
+
+// 🔄 新增：更新日历显示范围
+function updateCalendarRange() {
+    const startInput = document.getElementById('calStart').value;
+    const endInput = document.getElementById('calEnd').value;
+    
+    if (!startInput || !endInput) return;
+    if (startInput >= endInput) {
+        alert('结束时间必须晚于开始时间');
+        return;
+    }
+
+    const minTime = startInput + ':00';
+    // 如果用户选了 23:59，我们自动视为 24:00:00 (全天)
+    const maxTime = endInput === '23:59' ? '24:00:00' : endInput + ':00';
+
+    localStorage.setItem('calMinTime', minTime);
+    localStorage.setItem('calMaxTime', maxTime);
+
+    if (calendarInstance) {
+        calendarInstance.setOption('slotMinTime', minTime);
+        calendarInstance.setOption('slotMaxTime', maxTime);
+    }
 }
 
 // 🔄 数据刷新函数：从 LocalStorage 读取并分发
@@ -829,6 +857,15 @@ function openCalendarView() {
     document.documentElement.style.overflow = 'hidden'; // 👈 新增：锁定 html 根元素
     document.body.style.overflow = 'hidden'; // 👈 新增：打开时禁止背景滚动
     const modal = document.getElementById('calendarModal');
+    
+    // 同步输入框状态
+    const savedMin = localStorage.getItem('calMinTime') || '00:00:00';
+    const savedMax = localStorage.getItem('calMaxTime') || '24:00:00';
+    const startEl = document.getElementById('calStart');
+    const endEl = document.getElementById('calEnd');
+    if(startEl) startEl.value = savedMin.substring(0, 5);
+    if(endEl) endEl.value = savedMax === '24:00:00' ? '23:59' : savedMax.substring(0, 5);
+
     modal.showModal(); // 显示弹窗
     
     // 延迟一丢丢渲染，防止尺寸计算错误
