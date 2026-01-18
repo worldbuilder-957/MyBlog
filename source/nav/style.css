@@ -38,7 +38,7 @@ html, body {
     }
 }
 
-/* #region --- 手机端适配 --- */
+/* #region 1 --- 手机端适配 --- */
 @media (max-width: 768px) {
     /* #region ===1. 布局重构：从“四列”变成“单列”=== */
     .container {
@@ -124,12 +124,12 @@ html, body {
 
     /* 6. 日程编辑弹窗适配 */
     .event-modal {
-        width: 90% !important; /* 手机上弹窗占宽 90% */
-        max-height: 80vh; /* 防止太高超出屏幕 */
-        overflow-y: auto; /* 内容多了可以滚 */
+        width: 90% !important;       /* 手机上弹窗占宽 90% */
+        max-height: 80vh;            /* 防止太高超出屏幕 */
+        overflow-y: auto;            /* 内容多了可以滚 */
     }
     .form-row {
-        flex-direction: column; /* 表单里的左右并排改成上下堆叠 */
+        flex-direction: column;      /* 表单里的左右并排改成上下堆叠 */
         gap: 10px;
     }
 }
@@ -768,8 +768,8 @@ body {
 /* 左侧：待办侧边栏 */
 .sidebar {
     width: 280px;
-    background: rgba(247, 246, 223, 0.8);
-    border-right: 1px solid rgba(176, 174, 155, 0.765);
+    background: rgb(248, 249, 250);
+    border-right: 1px solid rgb(142, 142, 142);
     padding: 20px;
     display: flex; flex-direction: column; gap: 15px;
 }
@@ -790,7 +790,7 @@ body {
 .fc-event-main { color: inherit; }               /* 修复文字颜色 */
 .draggable-item {
     padding: 12px;
-    background: rgba(229, 185, 185, 0.8);
+    background: rgb(248, 249, 250);
     border-radius: 8px;
     cursor: grab;
     font-size: 0.9rem;
@@ -810,7 +810,7 @@ body {
     display: flex; flex-direction: column; gap: 15px;
     overflow: hidden;                                            /* 防止撑开 */
     height: 100%;                                                /* 强制占满高度 */
-    background: rgba(250, 245, 210, 0.888);                    /* 主背景颜色 */
+    background: rgb(255, 255, 255);                            /* 主背景颜色 */
     min-height: 0;                                               /* 允许 flex 子元素收缩 */
 }
 
@@ -842,7 +842,7 @@ body {
 /* 日历本体美化 (FullCalendar 覆盖样式) */
 #calendar {
     flex: 1;
-    background: rgba(253, 252, 252, 0.8);
+    background: rgb(255, 255, 255);
     border-radius: 12px;
     padding: 15px;
     color: var(--text-main);
