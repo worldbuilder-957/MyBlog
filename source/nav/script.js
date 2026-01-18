@@ -826,6 +826,7 @@ function saveToStorage(events) {
 
 // 🚪 界面操作：打开/关闭日历
 function openCalendarView() {
+    document.body.style.overflow = 'hidden'; // 👈 新增：打开时禁止背景滚动
     const modal = document.getElementById('calendarModal');
     modal.showModal(); // 显示弹窗
     
@@ -844,6 +845,7 @@ function openCalendarView() {
 }
 
 function closeCalendar() {
+    document.body.style.overflow = ''; // 👈 新增：关闭时恢复背景滚动
     document.getElementById('calendarModal').close();
 }
 
@@ -1233,3 +1235,99 @@ setTimeout(() => {
     }
 }, 1000);
 // #endregion ====================================
+
+// #region 12. 本地通知系统 (Notification) =========================
+
+// 1. 申请通知权限 (需要用户手动触发，浏览器才允许)
+function requestNotificationPermission() {
+    if (!("Notification" in window)) {
+        alert("抱歉，您的设备不支持通知功能。");
+        return;
+    }
+
+    Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+            // 第一次授权成功，发一条测试通知
+            new Notification("🎉 通知已开启", {
+                body: "以后日程快到时，我会在这里提醒你！",
+                icon: "/images/CatIcon192.png" // 确保这里有你的图标
+            });
+        } else {
+            alert("需要通知权限才能发送提醒哦！请在系统设置中允许。");
+        }
+    });
+}
+
+// 2. 核心逻辑：检查有没有快到期的日程
+function checkReminders() {
+    // 如果没权限，就别白费力气了
+    if (Notification.permission !== "granted") return;
+
+    const events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+    const now = new Date();
+    
+    // 获取当前时间的“分钟级”时间戳（忽略秒）
+    const currentMinuteStr = formatDateForInput(now); // 借用你之前写的格式化函数: YYYY-MM-DDTHH:mm
+
+    events.forEach(event => {
+        // 1. 检查有没有设置提醒
+        const reminderMinutes = event.extendedProps?.reminder;
+        if (!reminderMinutes || reminderMinutes == 0) return;
+
+        // 2. 计算“应该提醒的时间”
+        const startTime = new Date(event.start);
+        const triggerTime = new Date(startTime.getTime() - reminderMinutes * 60000); // 提前 N 分钟
+        
+        // 3. 格式化为分钟字符串进行比对
+        const triggerTimeStr = formatDateForInput(triggerTime);
+
+        // 4. 如果“现在”正好是“提醒时间”
+        // 为了防止一分钟内重复弹窗，我们可以加个简单的锁，或者利用 localStorage 记录 "notified_ids"
+        // 这里用最简单的逻辑：检查时间是否完全匹配
+        if (triggerTimeStr === currentMinuteStr) {
+            // ⚠️ 为了防止每秒都弹，我们需要记录一下“这个事件我已经提醒过了”
+            // 简单方案：利用 SessionStorage (刷新后失效) 或者给 event 加个临时标记
+            // 这里我们采用：只在每分钟的第 0-5 秒检测，避免重复
+            if (now.getSeconds() < 10) { 
+                sendNotification(event);
+            }
+        }
+    });
+}
+
+// 3. 发送具体通知
+function sendNotification(event) {
+    // 防止重复弹窗的简单锁 (SessionStorage)
+    const lockKey = `notified_${event.id}_${new Date().getTime()}`; // 加时间戳防止还是旧的
+    // 这里简化一下：用分钟级锁
+    const simpleLockKey = `notified_${event.id}_${formatDateForInput(new Date())}`;
+    
+    if (sessionStorage.getItem(simpleLockKey)) return; // 如果这一分钟已经弹过了，就不弹了
+
+    // 弹窗！
+    const title = `🔔 日程提醒: ${event.title}`;
+    const options = {
+        body: `${event.start.replace('T', ' ')} 开始\n地点: ${event.extendedProps.location || '无地点'}`,
+        icon: "/images/CatIcon192.png",
+        tag: event.id, // 相同tag的通知会覆盖，不会堆叠
+        renotify: true,
+        requireInteraction: true // 强制需要用户点击才会消失（防止漏看）
+    };
+
+    // 尝试发送 (兼容 Service Worker 和 普通网页)
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification(title, options);
+        });
+    } else {
+        new Notification(title, options);
+    }
+
+    // 标记已发送
+    sessionStorage.setItem(simpleLockKey, 'true');
+}
+
+// 4. 启动“闹钟守卫”：每分钟检查一次
+setInterval(checkReminders, 60 * 1000); 
+
+// #endregion =================================================
