@@ -1072,8 +1072,8 @@ body {
 }
 
 .btn.primary {
-    background: rgba(107, 114, 128, 0.8);
-    color: var(--text-main);
+    background: rgb(51, 112, 255);
+    color: #ffffff;
 }
 
 .btn.primary:hover {
@@ -1081,8 +1081,8 @@ body {
 }
 
 .btn.secondary {
-    background: rgba(74, 79, 91, 0.8);
-    color: var(--text-sub);
+    background: rgb(51, 112, 255);
+    color: #ffffff;
 }
 
 .btn.secondary:hover {
