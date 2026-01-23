@@ -1237,7 +1237,7 @@ const searchEngines = {
     },
     yandex: {
         url: "https://yandex.com/search/?text=",
-        icon: "ri-earth-fill"
+        icon: "ri-search-fill"
     }
 };
 
