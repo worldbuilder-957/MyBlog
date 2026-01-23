@@ -1230,7 +1230,7 @@ const searchEngines = {
     },
     Yandex: {
         url: "https://yandex.com/search/?text=",
-        icon: "ri-yandex-fill"
+        icon: "ri-yandex-fill",
     }
 };
 
