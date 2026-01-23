@@ -34,22 +34,22 @@ layout: false
                 <i id="current-engine-icon" class="ri-google-fill"></i>
                 
                 <div class="engine-dropdown" id="engine-dropdown">
-                    <div class="engine-option" onclick="selectEngine('bing')">
+                    <div class="engine-option" onclick="selectEngine('bing', event)">
                         <i class="ri-search-line"></i> Bing
                     </div>
-                    <div class="engine-option" onclick="selectEngine('google')">
+                    <div class="engine-option" onclick="selectEngine('google', event)">
                         <i class="ri-google-fill"></i> Google
                     </div>
-                    <div class="engine-option" onclick="selectEngine('baidu')">
+                    <div class="engine-option" onclick="selectEngine('baidu', event)">
                         <i class="ri-baidu-fill"></i> Baidu
                     </div>
-                    <div class="engine-option" onclick="selectEngine('yandex')">
-                        <i class="ri-yandex-fill"></i> Yandex
+                    <div class="engine-option" onclick="selectEngine('yandex', event)">
+                        <i class="ri-earth-fill"></i> Yandex
                     </div>
                 </div>
             </div>
 
-            <input type="text" id="search-input" placeholder="Search..." onkeypress="handleSearch(event)" autocomplete="off">
+            <input type="text" id="search-input" placeholder="Search..." onkeydown="handleSearch(event)" autocomplete="off">
         </div>
 
         <div class="card time-card">

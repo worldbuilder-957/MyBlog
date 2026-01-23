@@ -1237,7 +1237,7 @@ const searchEngines = {
     },
     yandex: {
         url: "https://yandex.com/search/?text=",
-        icon: "ri-yandex-fill",
+        icon: "ri-earth-fill"
     }
 };
 
@@ -1252,7 +1252,10 @@ function toggleEngineList(e) {
 }
 
 // 3. 选择引擎
-function selectEngine(engineKey) {
+function selectEngine(engineKey, e) {
+    // 阻止冒泡，防止触发父级 toggleEngineList 导致菜单无法关闭
+    if (e) e.stopPropagation();
+
     // 更新当前引擎变量
     currentEngine = engineKey;
     
