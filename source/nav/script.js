@@ -40,6 +40,13 @@ async function loadFromCloud() {
             localStorage.setItem('calendarEvents', JSON.stringify(cloudData.calendarEvents));
         }
         
+        // 同步搜索引擎偏好
+        if (cloudData.preferredEngine) {
+            if (typeof selectEngine === 'function') {
+                selectEngine(cloudData.preferredEngine);
+            }
+        }
+        
         // 刷新页面显示
         renderTodos();
         refreshCalendarData();
@@ -1216,26 +1223,26 @@ function formatDateForInput(date) {
 
 // 1. 定义引擎配置
 const searchEngines = {
-    Bing: {
+    bing: {
         url: "https://cn.bing.com/search?q=",
         icon: "ri-search-fill"
     },
-    Google: {
+    google: {
         url: "https://www.google.com/search?q=",
         icon: "ri-google-fill"
     },
-    Baidu: {
+    baidu: {
         url: "https://www.baidu.com/s?wd=",
         icon: "ri-baidu-fill"
     },
-    Yandex: {
+    yandex: {
         url: "https://yandex.com/search/?text=",
         icon: "ri-yandex-fill",
     }
 };
 
 // 默认引擎 (你可以改成 google 或 baidu)
-let currentEngine = 'Google';
+let currentEngine = 'google';
 
 // 2. 切换下拉菜单显示/隐藏
 function toggleEngineList(e) {
@@ -1251,18 +1258,26 @@ function selectEngine(engineKey) {
     
     // 更新左侧图标
     const icon = document.getElementById('current-engine-icon');
-    icon.className = searchEngines[engineKey].icon;
+    
+    // 移除旧图标并添加新图标 (保留其他样式类)
+    Object.values(searchEngines).forEach(e => icon.classList.remove(e.icon));
+    icon.classList.add(searchEngines[engineKey].icon);
     
     // (可选) 更新 Placeholder 提示文字
     // document.getElementById('search-input').placeholder = `Search with ${engineKey}...`;
 
     // 存入本地存储，下次打开记住选择
     localStorage.setItem('preferredEngine', currentEngine);
+    
+    // 关闭下拉菜单
+    const dropdown = document.getElementById('engine-dropdown');
+    if (dropdown) dropdown.classList.remove('show');
 }
 
 // 4. 执行搜索 (回车触发)
 function handleSearch(e) {
     if (e.key === 'Enter') {
+        e.preventDefault();
         const query = document.getElementById('search-input').value;
         if (query.trim()) {
             const url = searchEngines[currentEngine].url + encodeURIComponent(query);
