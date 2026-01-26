@@ -190,6 +190,7 @@ setInterval(updateCalendar, 60 * 60 * 1000);
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
 let currentTodoId = null; // 新增：用于记录当前编辑的任务ID
+let hideCompleted = localStorage.getItem('hideCompleted') === 'true'; // 读取隐藏状态
 
 // 读取数据：如果没有旧数据，初始化一个包含元数据的示例
 let todos = JSON.parse(localStorage.getItem('myRichTodos')) || [
@@ -200,10 +201,11 @@ let todos = JSON.parse(localStorage.getItem('myRichTodos')) || [
 function renderTodos(filterText = '') {
     todoListEl.innerHTML = '';
     
-    // 过滤逻辑：搜索 标题 或 标签
+    // 过滤逻辑：搜索 标题 或 标签，且根据设置隐藏已完成
     const filtered = todos.filter(t => 
-        t.text.toLowerCase().includes(filterText.toLowerCase()) || 
-        t.tags.some(tag => tag.toLowerCase().includes(filterText.toLowerCase()))
+        (t.text.toLowerCase().includes(filterText.toLowerCase()) || 
+        t.tags.some(tag => tag.toLowerCase().includes(filterText.toLowerCase()))) &&
+        (!hideCompleted || !t.done)
     );
 
     filtered.forEach(todo => {
@@ -235,6 +237,8 @@ function renderTodos(filterText = '') {
         `;
         todoListEl.appendChild(li);
     });
+    
+    updateToggleIcon(); // 确保图标状态正确
 }
 
 // --- B. 数据操作 ---
@@ -299,6 +303,18 @@ function saveAndRender() {
 function filterTodos() {
     const query = document.getElementById('todoSearch').value;
     renderTodos(query);
+}
+
+// 切换显示/隐藏已完成
+function toggleHideCompleted() {
+    hideCompleted = !hideCompleted;
+    localStorage.setItem('hideCompleted', hideCompleted);
+    renderTodos(document.getElementById('todoSearch').value);
+}
+
+function updateToggleIcon() {
+    const btnIcon = document.querySelector('#toggleCompletedBtn i');
+    if (btnIcon) btnIcon.className = hideCompleted ? 'ri-eye-off-line' : 'ri-eye-line';
 }
 
 // --- C. 弹窗控制 ---
