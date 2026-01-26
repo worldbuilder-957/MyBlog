@@ -190,6 +190,7 @@ setInterval(updateCalendar, 60 * 60 * 1000);
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
 let currentTodoId = null; // 新增：用于记录当前编辑的任务ID
+let currentEditingTags = []; // 新增：用于暂存编辑框中的标签
 let hideCompleted = localStorage.getItem('hideCompleted') === 'true'; // 读取隐藏状态
 
 // 读取数据：如果没有旧数据，初始化一个包含元数据的示例
@@ -246,11 +247,10 @@ function saveTask() {
     const text = document.getElementById('taskInput').value;
     const date = document.getElementById('taskDate').value;
     const loc = document.getElementById('taskLoc').value;
-    const tagsStr = document.getElementById('taskTags').value;
     
     if (!text.trim()) return alert("任务内容不能为空！");
     
-    const tags = tagsStr.split(' ').filter(t => t);
+    const tags = [...currentEditingTags]; // 使用当前编辑的标签数组
 
     if (currentTodoId) {
         // 编辑模式：更新现有任务
@@ -323,6 +323,7 @@ function openTaskModal(id = null) {
     const modal = document.getElementById('taskModal');
     const titleEl = modal.querySelector('h3');
     const btnEl = modal.querySelector('.btn.primary');
+    const tagInput = document.getElementById('tagInput');
 
     if (id) {
         // 编辑模式：填充数据
@@ -331,7 +332,8 @@ function openTaskModal(id = null) {
             document.getElementById('taskInput').value = todo.text;
             document.getElementById('taskDate').value = todo.date || '';
             document.getElementById('taskLoc').value = todo.loc || '';
-            document.getElementById('taskTags').value = todo.tags.join(' ');
+            currentEditingTags = [...todo.tags]; // 复制标签数据
+            if(tagInput) tagInput.value = '';
             
             if(titleEl) titleEl.innerHTML = '<i class="ri-edit-circle-line"></i> 编辑任务';
             if(btnEl) btnEl.innerText = '保存修改';
@@ -341,17 +343,124 @@ function openTaskModal(id = null) {
         document.getElementById('taskInput').value = '';
         document.getElementById('taskDate').value = '';
         document.getElementById('taskLoc').value = '';
-        document.getElementById('taskTags').value = '';
+        currentEditingTags = []; // 清空标签
+        if(tagInput) tagInput.value = '';
         
         if(titleEl) titleEl.innerHTML = '<i class="ri-edit-circle-line"></i> 新建任务';
         if(btnEl) btnEl.innerText = '创建';
     }
+    renderTagChips(); // 渲染标签胶囊
     modal.showModal();
 }
 function closeTaskModal() { modal.close(); }
 
+// #region --- 标签输入系统逻辑 ---
+
+// 预设一组好看的颜色
+const TAG_PALETTE = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
+
+// 根据字符串生成固定颜色
+function getTagColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash += str.charCodeAt(i);
+    return TAG_PALETTE[hash % TAG_PALETTE.length];
+}
+
+// 渲染标签胶囊
+function renderTagChips() {
+    const container = document.getElementById('tagChipsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    currentEditingTags.forEach((tag, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'tag-chip-edit';
+        chip.style.backgroundColor = getTagColor(tag);
+        chip.innerHTML = `
+            <span>${tag}</span>
+            <div class="tag-remove" onclick="removeTag(${index}, event)">
+                <i class="ri-close-line"></i>
+            </div>
+        `;
+        container.appendChild(chip);
+    });
+}
+
+// 添加标签
+function addTag(tagName) {
+    const tag = tagName.trim();
+    if (tag && !currentEditingTags.includes(tag)) {
+        currentEditingTags.push(tag);
+        renderTagChips();
+    }
+    document.getElementById('tagInput').value = '';
+    document.getElementById('tagDropdown').style.display = 'none';
+}
+
+// 移除标签
+function removeTag(index, e) {
+    if(e) e.stopPropagation(); // 防止触发输入框聚焦
+    currentEditingTags.splice(index, 1);
+    renderTagChips();
+}
+
+// 初始化标签输入监听
+function initTagInputSystem() {
+    const input = document.getElementById('tagInput');
+    const dropdown = document.getElementById('tagDropdown');
+    
+    if (!input || !dropdown) return;
+
+    // 1. 监听输入：显示联想
+    input.addEventListener('input', (e) => {
+        const val = e.target.value.trim().toLowerCase();
+        if (!val) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        // 收集所有已存在的标签 (去重)
+        const allTags = new Set();
+        todos.forEach(t => t.tags.forEach(tag => allTags.add(tag)));
+        
+        // 过滤：匹配输入 且 不在当前已选列表中
+        const matches = Array.from(allTags).filter(t => 
+            t.toLowerCase().includes(val) && !currentEditingTags.includes(t)
+        );
+
+        if (matches.length > 0) {
+            dropdown.innerHTML = matches.map(t => 
+                `<div class="tag-option" onclick="addTag('${t}')">${t}</div>`
+            ).join('');
+            dropdown.style.display = 'block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // 2. 监听回车：创建新标签
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTag(input.value);
+        }
+        // Backspace 删除最后一个标签 (可选体验优化)
+        if (e.key === 'Backspace' && input.value === '' && currentEditingTags.length > 0) {
+            removeTag(currentEditingTags.length - 1);
+        }
+    });
+
+    // 3. 点击外部关闭下拉
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.tag-input-wrapper') && !e.target.closest('.tag-dropdown')) {
+            dropdown.style.display = 'none';
+        }
+    });
+}
+
 // 初始化
 renderTodos();
+initTagInputSystem(); // 启动标签系统
 // #endregion ================================================================= 
 
 // #region 5. 天气温度功能==============================================

@@ -564,6 +564,84 @@ body {
 .tag[data-name="紧急"] { background: #ffebee; color: #c62828; }
 .tag[data-name="GIS"] { background: #e8f5e9; color: #2e7d32; }
 
+/* --- 标签输入框组件样式 --- */
+.tag-input-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid rgba(100, 105, 115, 0.5);
+    border-radius: 8px;
+    background: rgba(250, 250, 251, 0.8);
+    min-height: 42px;
+    align-items: center;
+    cursor: text;
+}
+.tag-input-wrapper:focus-within {
+    border-color: #6b7280;
+}
+.tag-input-wrapper input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: 1;
+    min-width: 80px;
+    height: 24px;
+    outline: none;
+}
+
+/* 胶囊样式 */
+.tag-chip-edit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.85rem;
+    user-select: none;
+    transition: transform 0.1s;
+}
+.tag-chip-edit:active { transform: scale(0.95); }
+
+/* 删除图标 */
+.tag-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.3); /* 半透明背景 */
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.tag-remove:hover { background: rgba(255, 255, 255, 0.5); }
+.tag-remove i { font-size: 12px; }
+
+/* 下拉菜单 */
+.tag-dropdown {
+    position: absolute;
+    top: 100%; left: 0; width: 100%;
+    background: var(--card-bg);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+    margin-top: 4px;
+}
+.tag-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+.tag-option:hover { background: rgba(0,0,0,0.05); }
+
 /* ----- 弹窗 (Dialog) 样式 ----- */
 .modal {
     border: none; border-radius: 16px;
