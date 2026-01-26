@@ -189,6 +189,7 @@ setInterval(updateCalendar, 60 * 60 * 1000);
 // 该模块实现一个待办事项系统，支持标题、日期、地点、标签等多种属性
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
+let currentTodoId = null; // 新增：用于记录当前编辑的任务ID
 
 // 读取数据：如果没有旧数据，初始化一个包含元数据的示例
 let todos = JSON.parse(localStorage.getItem('myRichTodos')) || [
@@ -226,7 +227,7 @@ function renderTodos(filterText = '') {
         li.innerHTML = `
             <div class="todo-header">
                 <input type="checkbox" ${todo.done ? 'checked' : ''} onclick="toggleTodo(${todo.id})">
-                <span class="todo-text ${todo.done ? 'done' : ''}">${todo.text}</span>
+                <span class="todo-text ${todo.done ? 'done' : ''}" onclick="openTaskModal(${todo.id})" style="cursor:pointer" title="点击编辑">${todo.text}</span>
                 <i class="ri-close-circle-line" style="color:var(--text-sub); cursor:pointer; margin-left:auto;" onclick="deleteTodo(${todo.id})"></i>
             </div>
             ${metaHtml}
@@ -237,30 +238,40 @@ function renderTodos(filterText = '') {
 }
 
 // --- B. 数据操作 ---
-function addTask() {
+function saveTask() {
     const text = document.getElementById('taskInput').value;
     const date = document.getElementById('taskDate').value;
     const loc = document.getElementById('taskLoc').value;
     const tagsStr = document.getElementById('taskTags').value;
     
     if (!text.trim()) return alert("任务内容不能为空！");
+    
+    const tags = tagsStr.split(' ').filter(t => t);
 
-    const newTodo = {
-        id: Date.now(), // 使用时间戳作为唯一ID
-        text: text,
-        date: date,
-        loc: loc,
-        tags: tagsStr.split(' ').filter(t => t), // 按空格分割标签
-        done: false
-    };
+    if (currentTodoId) {
+        // 编辑模式：更新现有任务
+        const todo = todos.find(t => t.id === currentTodoId);
+        if (todo) {
+            todo.text = text;
+            todo.date = date;
+            todo.loc = loc;
+            todo.tags = tags;
+        }
+    } else {
+        // 新增模式：创建新任务
+        const newTodo = {
+            id: Date.now(),
+            text: text,
+            date: date,
+            loc: loc,
+            tags: tags,
+            done: false
+        };
+        todos.unshift(newTodo);
+    }
 
-    todos.unshift(newTodo); // 加到最前面
     saveAndRender();
     closeTaskModal();
-    
-    // 清空表单
-    document.getElementById('taskInput').value = '';
-    document.getElementById('taskTags').value = '';
 }
 
 function toggleTodo(id) {
@@ -291,7 +302,36 @@ function filterTodos() {
 }
 
 // --- C. 弹窗控制 ---
-function openTaskModal() { modal.showModal(); }
+function openTaskModal(id = null) {
+    currentTodoId = id;
+    const modal = document.getElementById('taskModal');
+    const titleEl = modal.querySelector('h3');
+    const btnEl = modal.querySelector('.btn.primary');
+
+    if (id) {
+        // 编辑模式：填充数据
+        const todo = todos.find(t => t.id === id);
+        if (todo) {
+            document.getElementById('taskInput').value = todo.text;
+            document.getElementById('taskDate').value = todo.date || '';
+            document.getElementById('taskLoc').value = todo.loc || '';
+            document.getElementById('taskTags').value = todo.tags.join(' ');
+            
+            if(titleEl) titleEl.innerHTML = '<i class="ri-edit-circle-line"></i> 编辑任务';
+            if(btnEl) btnEl.innerText = '保存修改';
+        }
+    } else {
+        // 新增模式：清空表单
+        document.getElementById('taskInput').value = '';
+        document.getElementById('taskDate').value = '';
+        document.getElementById('taskLoc').value = '';
+        document.getElementById('taskTags').value = '';
+        
+        if(titleEl) titleEl.innerHTML = '<i class="ri-edit-circle-line"></i> 新建任务';
+        if(btnEl) btnEl.innerText = '创建';
+    }
+    modal.showModal();
+}
 function closeTaskModal() { modal.close(); }
 
 // 初始化
