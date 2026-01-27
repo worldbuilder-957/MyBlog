@@ -791,7 +791,13 @@ function initCalendarSystem() {
         slotMaxTime: savedMax,       // 最晚显示时间
         slotDuration: '00:30:00',      // 时间间隔（30分钟）
         slotLabelInterval: '01:00:00', // 标签间隔（1小时）
+        slotLabelFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
         allDaySlot: true, // 显示全天事件区域
+        allDayText: '全天',
         // 自定义视图配置
         views: {
             dayGridMonth: {
