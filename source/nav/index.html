@@ -145,11 +145,11 @@ layout: false
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
+                    <div class="form-group" style="flex: 1;">
                         <label>截止日期</label>
                         <input type="date" id="taskDate">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="flex: 1;">
                         <label>重复</label>
                         <select id="taskRepeat" onchange="toggleCustomInterval()">
                             <option value="">不重复</option>
@@ -160,11 +160,11 @@ layout: false
                             <option value="custom">自定义(天)</option>
                         </select>
                     </div>
-                    <div class="form-group" id="customIntervalGroup" style="display:none; flex: 0.4;">
+                    <div class="form-group" id="customIntervalGroup" style="display:none; flex: 0.5;">
                         <label>间隔天数</label>
                         <input type="number" id="taskCustomInterval" min="1" value="1" placeholder="输入天数">
                     </div>
-                    <div class="form-group" id="customEndDateGroup" style="display:none;">
+                    <div class="form-group" id="customEndDateGroup" style="display:none; flex: 1;">
                         <label>重复截止</label>
                         <input type="date" id="taskCustomEndDate">
                     </div>
