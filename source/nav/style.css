@@ -1119,6 +1119,8 @@ body {
 .form-group input,
 .form-group select,
 .form-group textarea {
+    width: 100%;
+    min-width: 0;
     padding: 10px;
     border: 1px solid rgba(100, 105, 115, 0.5);
     border-radius: 8px;
