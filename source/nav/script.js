@@ -224,6 +224,10 @@ function renderTodos(filterText = '') {
             metaHtml = `<div class="todo-meta">`;
             if (todo.date) metaHtml += `<span class="meta-tag"><i class="ri-calendar-line"></i> ${todo.date.slice(5)}</span>`; // 只显示月-日
             if (todo.loc)  metaHtml += `<span class="meta-tag"><i class="ri-map-pin-line"></i> ${todo.loc}</span>`;
+            // 显示重复图标
+            if (todo.repeat) {
+                metaHtml += `<span class="meta-tag" title="循环任务"><i class="ri-loop-right-line"></i></span>`;
+            }
             metaHtml += `</div>`;
         }
 
@@ -247,6 +251,8 @@ function saveTask() {
     const text = document.getElementById('taskInput').value;
     const date = document.getElementById('taskDate').value;
     const loc = document.getElementById('taskLoc').value;
+    const repeat = document.getElementById('taskRepeat').value;
+    const customInterval = document.getElementById('taskCustomInterval').value;
     
     if (!text.trim()) return alert("任务内容不能为空！");
     
@@ -260,6 +266,8 @@ function saveTask() {
             todo.date = date;
             todo.loc = loc;
             todo.tags = tags;
+            todo.repeat = repeat;
+            todo.customInterval = customInterval;
         }
     } else {
         // 新增模式：创建新任务
@@ -269,7 +277,9 @@ function saveTask() {
             date: date,
             loc: loc,
             tags: tags,
-            done: false
+            done: false,
+            repeat: repeat,
+            customInterval: customInterval
         };
         todos.unshift(newTodo);
     }
@@ -281,9 +291,61 @@ function saveTask() {
 function toggleTodo(id) {
     const todo = todos.find(t => t.id === id);
     if (todo) {
+        const wasDone = todo.done;
         todo.done = !todo.done;
+        
+        // 如果是标记为完成，且有重复规则，则生成下一个任务
+        if (!wasDone && todo.done && todo.repeat && todo.date) {
+            createNextRecurringTask(todo);
+        }
+        
         saveAndRender();
     }
+}
+
+// 生成下一个重复任务
+function createNextRecurringTask(originalTodo) {
+    const date = new Date(originalTodo.date);
+    // 简单的日期计算逻辑
+    switch (originalTodo.repeat) {
+        case 'daily':
+            date.setDate(date.getDate() + 1);
+            break;
+        case 'weekly':
+            date.setDate(date.getDate() + 7);
+            break;
+        case 'monthly':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'workweek':
+            const day = date.getDay();
+            // 周五(5) -> 周一(1) (+3天), 周六(6) -> 周一(1) (+2天), 其他 +1天
+            if (day === 5) date.setDate(date.getDate() + 3);
+            else if (day === 6) date.setDate(date.getDate() + 2);
+            else date.setDate(date.getDate() + 1);
+            break;
+        case 'custom':
+            const interval = parseInt(originalTodo.customInterval) || 1;
+            date.setDate(date.getDate() + interval);
+            break;
+    }
+
+    // 格式化回 YYYY-MM-DD
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const nextDateStr = `${y}-${m}-${d}`;
+
+    // 创建新任务
+    const newTodo = {
+        ...originalTodo,
+        id: Date.now(), // 新ID
+        date: nextDateStr,
+        done: false // 新任务未完成
+    };
+    
+    // 插入到列表顶部
+    todos.unshift(newTodo);
 }
 
 function deleteTodo(id) {
@@ -324,6 +386,8 @@ function openTaskModal(id = null) {
     const titleEl = modal.querySelector('h3');
     const btnEl = modal.querySelector('.btn.primary');
     const tagInput = document.getElementById('tagInput');
+    const repeatSelect = document.getElementById('taskRepeat');
+    const customGroup = document.getElementById('customIntervalGroup');
 
     if (id) {
         // 编辑模式：填充数据
@@ -332,6 +396,10 @@ function openTaskModal(id = null) {
             document.getElementById('taskInput').value = todo.text;
             document.getElementById('taskDate').value = todo.date || '';
             document.getElementById('taskLoc').value = todo.loc || '';
+            
+            repeatSelect.value = todo.repeat || '';
+            document.getElementById('taskCustomInterval').value = todo.customInterval || 1;
+            
             currentEditingTags = [...todo.tags]; // 复制标签数据
             if(tagInput) tagInput.value = '';
             
@@ -343,16 +411,30 @@ function openTaskModal(id = null) {
         document.getElementById('taskInput').value = '';
         document.getElementById('taskDate').value = '';
         document.getElementById('taskLoc').value = '';
+        repeatSelect.value = '';
+        document.getElementById('taskCustomInterval').value = 1;
         currentEditingTags = []; // 清空标签
         if(tagInput) tagInput.value = '';
         
         if(titleEl) titleEl.innerHTML = '<i class="ri-edit-circle-line"></i> 新建任务';
         if(btnEl) btnEl.innerText = '创建';
     }
+    
+    // 触发一次显示状态更新
+    toggleCustomInterval();
     renderTagChips(); // 渲染标签胶囊
     modal.showModal();
 }
 function closeTaskModal() { modal.close(); }
+
+// 切换自定义间隔输入框显示
+function toggleCustomInterval() {
+    const repeatVal = document.getElementById('taskRepeat').value;
+    const group = document.getElementById('customIntervalGroup');
+    if (group) {
+        group.style.display = (repeatVal === 'custom') ? 'flex' : 'none';
+    }
+}
 
 // #region --- 标签输入系统逻辑 ---
 
