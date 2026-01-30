@@ -253,6 +253,7 @@ function saveTask() {
     const loc = document.getElementById('taskLoc').value;
     const repeat = document.getElementById('taskRepeat').value;
     const customInterval = document.getElementById('taskCustomInterval').value;
+    const customEndDate = document.getElementById('taskCustomEndDate').value;
     
     if (!text.trim()) return alert("任务内容不能为空！");
     
@@ -268,6 +269,7 @@ function saveTask() {
             todo.tags = tags;
             todo.repeat = repeat;
             todo.customInterval = customInterval;
+            todo.customEndDate = customEndDate;
         }
     } else {
         // 新增模式：创建新任务
@@ -279,7 +281,8 @@ function saveTask() {
             tags: tags,
             done: false,
             repeat: repeat,
-            customInterval: customInterval
+            customInterval: customInterval,
+            customEndDate: customEndDate
         };
         todos.unshift(newTodo);
     }
@@ -336,6 +339,11 @@ function createNextRecurringTask(originalTodo) {
     const d = String(date.getDate()).padStart(2, '0');
     const nextDateStr = `${y}-${m}-${d}`;
 
+    // 检查是否超过截止日期
+    if (originalTodo.customEndDate && nextDateStr > originalTodo.customEndDate) {
+        return; // 超过截止日期，不再生成
+    }
+
     // 创建新任务
     const newTodo = {
         ...originalTodo,
@@ -388,6 +396,7 @@ function openTaskModal(id = null) {
     const tagInput = document.getElementById('tagInput');
     const repeatSelect = document.getElementById('taskRepeat');
     const customGroup = document.getElementById('customIntervalGroup');
+    const customEndDateInput = document.getElementById('taskCustomEndDate');
 
     if (id) {
         // 编辑模式：填充数据
@@ -399,6 +408,7 @@ function openTaskModal(id = null) {
             
             repeatSelect.value = todo.repeat || '';
             document.getElementById('taskCustomInterval').value = todo.customInterval || 1;
+            if(customEndDateInput) customEndDateInput.value = todo.customEndDate || '';
             
             currentEditingTags = [...todo.tags]; // 复制标签数据
             if(tagInput) tagInput.value = '';
@@ -413,6 +423,7 @@ function openTaskModal(id = null) {
         document.getElementById('taskLoc').value = '';
         repeatSelect.value = '';
         document.getElementById('taskCustomInterval').value = 1;
+        if(customEndDateInput) customEndDateInput.value = '';
         currentEditingTags = []; // 清空标签
         if(tagInput) tagInput.value = '';
         
@@ -431,8 +442,12 @@ function closeTaskModal() { modal.close(); }
 function toggleCustomInterval() {
     const repeatVal = document.getElementById('taskRepeat').value;
     const group = document.getElementById('customIntervalGroup');
+    const endGroup = document.getElementById('customEndDateGroup');
     if (group) {
         group.style.display = (repeatVal === 'custom') ? 'flex' : 'none';
+    }
+    if (endGroup) {
+        endGroup.style.display = (repeatVal === 'custom') ? 'flex' : 'none';
     }
 }
 

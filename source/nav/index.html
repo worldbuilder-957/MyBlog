@@ -160,9 +160,13 @@ layout: false
                             <option value="custom">自定义(天)</option>
                         </select>
                     </div>
-                    <div class="form-group" id="customIntervalGroup" style="display:none;">
+                    <div class="form-group" id="customIntervalGroup" style="display:none; flex: 0.6;">
                         <label>间隔天数</label>
                         <input type="number" id="taskCustomInterval" min="1" value="1" placeholder="输入天数">
+                    </div>
+                    <div class="form-group" id="customEndDateGroup" style="display:none;">
+                        <label>重复截止</label>
+                        <input type="date" id="taskCustomEndDate">
                     </div>
                 </div>
 
