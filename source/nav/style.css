@@ -481,9 +481,62 @@ body {
 }
 /* #endregion */
 
+/* #region --- 汇率卡片样式 --- */
+.rate-card {
+    grid-column: span 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+}
+
+.rate-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rate-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.rate-item:last-child { border-bottom: none; }
+
+.rate-name {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-sub); font-weight: 500;
+}
+
+.rate-val {
+    font-weight: 700; color: var(--text-main);
+    font-family: 'Segoe UI', monospace;
+}
+
+.rate-data {
+    display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;
+}
+
+.rate-change {
+    font-size: 0.7rem; margin-top: 2px; font-weight: 500;
+}
+
+/* 涨跌颜色：红涨绿跌 */
+.rate-up { color: #ef4444; }
+.rate-down { color: #22c55e; }
+
+.rate-update-time {
+    font-size: 0.7rem; color: var(--text-sub);
+    text-align: right; margin-top: 5px; opacity: 0.8;
+}
+/* #endregion */
+
 /* #region --- 6. 快捷方式 (跨4列) --- */
 .links-card {
-    grid-column: span 4;
+    grid-column: span 3;
     flex-direction: row;
     justify-content: space-around;
     align-items: center;

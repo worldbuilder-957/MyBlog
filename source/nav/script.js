@@ -1678,3 +1678,75 @@ function sendNotification(event) {
 setInterval(checkReminders, 60 * 1000); 
 
 // #endregion =================================================
+
+// #region 13. 汇率板块 =========================
+async function fetchExchangeRates() {
+    try {
+        // 使用 open.er-api.com (每日更新，免费)
+        
+        // 1. 计算昨天的日期 (UTC)
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yStr = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // 2. 并行获取“今日最新”和“昨日历史”数据
+        const [resNow, resPrev] = await Promise.all([
+            fetch('https://open.er-api.com/v6/latest/CNY'),
+            fetch(`https://open.er-api.com/v6/history/${yStr}/CNY`)
+        ]);
+
+        const dataNow = await resNow.json();
+        const dataPrev = await resPrev.json();
+        
+        if (dataNow.result === 'success') {
+            const ratesNow = dataNow.rates;
+            const ratesPrev = dataPrev.rates || {}; // 容错处理
+            
+            // 定义我们要显示的货币配置
+            const currencies = [
+                { code: 'USD', id: 'rate-usd', changeId: 'change-usd' },
+                { code: 'EUR', id: 'rate-eur', changeId: 'change-eur' },
+                { code: 'GBP', id: 'rate-gbp', changeId: 'change-gbp' },
+                { code: 'JPY', id: 'rate-jpy', changeId: 'change-jpy' }
+            ];
+            
+            currencies.forEach(curr => {
+                // 1. 计算今日汇率 (1 外币 = ? CNY)
+                const valNow = 1 / ratesNow[curr.code];
+                const elVal = document.getElementById(curr.id);
+                if(elVal) elVal.innerText = valNow.toFixed(4);
+
+                // 2. 计算涨跌 (对比昨日)
+                if (ratesPrev[curr.code]) {
+                    const valPrev = 1 / ratesPrev[curr.code];
+                    const diff = valNow - valPrev;
+                    const percent = (diff / valPrev) * 100;
+                    
+                    const elChange = document.getElementById(curr.changeId);
+                    if (elChange) {
+                        const isUp = diff >= 0;
+                        const icon = isUp ? 'ri-arrow-up-s-fill' : 'ri-arrow-down-s-fill';
+                        const colorClass = isUp ? 'rate-up' : 'rate-down';
+                        const sign = isUp ? '+' : '';
+                        
+                        elChange.className = `rate-change ${colorClass}`;
+                        elChange.innerHTML = `<i class="${icon}"></i> ${sign}${percent.toFixed(2)}%`;
+                    }
+                }
+            });
+            
+            // 更新时间
+            const timeEl = document.getElementById('rate-update-time');
+            if(timeEl) {
+                const date = new Date(dataNow.time_last_update_utc);
+                timeEl.innerText = '更新: ' + date.toLocaleDateString();
+            }
+        }
+    } catch (error) {
+        console.error('汇率获取失败:', error);
+    }
+}
+
+fetchExchangeRates();
+// #endregion
