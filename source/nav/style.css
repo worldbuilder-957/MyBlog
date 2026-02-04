@@ -1134,7 +1134,7 @@ body {
 }
 
 .modal::backdrop {
-    background: rgba(241, 246, 216, 0.95);
+    background: #b2b2b2;
     backdrop-filter: blur(4px);
 }
 
@@ -1222,9 +1222,8 @@ body {
     background: rgba(84, 89, 102, 0.9);
 }
 /* #endregion */
-/* #endregion */
 
-/* #region --- 9. Large Folder (iOS Style) --- */
+/* #region --- 应用图标跳转链接 --- */
 .glass-folder {
     /* Container Specs */
     width: 100%;
@@ -1337,3 +1336,4 @@ body {
         background: rgba(0, 0, 0, 0.2);
     }
 }
+/* #endregion */
