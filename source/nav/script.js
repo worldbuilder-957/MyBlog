@@ -926,7 +926,6 @@ function initCalendarSystem() {
                 
                 return { domNodes: [container] };
             }
-            return null;
         },
 
         // 时间网格配置 - 确保时间轴显示
