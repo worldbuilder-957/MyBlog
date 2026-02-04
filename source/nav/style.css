@@ -1129,7 +1129,7 @@ body {
     padding: 0;
     width: 90%;
     max-width: 500px;
-    background: rgba(241, 246, 216, 0.95);
+    background: #ffffff;
     color: var(--text-main);
 }
 
