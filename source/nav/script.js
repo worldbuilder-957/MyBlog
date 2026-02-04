@@ -185,7 +185,7 @@ updateCalendar();
 setInterval(updateCalendar, 60 * 60 * 1000);
 // #endregion =================================================================
 
-// #region 4. 超级待办事项======================================================
+// #region 4. 待办人物事项======================================================
 // 该模块实现一个待办事项系统，支持标题、日期、地点、标签等多种属性
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
@@ -447,7 +447,7 @@ function toggleCustomInterval() {
         group.style.display = (repeatVal === 'custom') ? 'flex' : 'none';
     }
     if (endGroup) {
-        endGroup.style.display = (repeatVal === 'custom') ? 'flex' : 'none';
+        endGroup.style.display = (repeatVal !== '') ? 'flex' : 'none';
     }
 }
 
@@ -1749,10 +1749,9 @@ async function fetchExchangeRates() {
                         const isUp = diff >= 0;
                         const icon = isUp ? 'ri-arrow-up-s-fill' : 'ri-arrow-down-s-fill';
                         const colorClass = isUp ? 'rate-up' : 'rate-down';
-                        const text = isUp ? '涨' : '跌';
                         
                         elChange.className = `rate-change ${colorClass}`;
-                        elChange.innerHTML = `<i class="${icon}"></i> ${text}`;
+                        elChange.innerHTML = `<i class="${icon}"></i>`;
                     }
                 }
             }
