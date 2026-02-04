@@ -749,6 +749,7 @@ renderApps();
 
 let calendarInstance = null; // 保存日历实例
 let currentEventId = null; // 当前编辑的事件ID
+let currentEventStart = null; // 当前编辑事件的开始时间 (用于区分重复事件的具体实例)
 
 // --- 🎨 新增：颜色分类配置 ---
 const EVENT_COLORS = [
@@ -883,6 +884,51 @@ function initCalendarSystem() {
         editable: true,                // 允许在日历里拖动
         droppable: true,               // 允许从外部拖拽
         //plugins: ['rrule'], 理应集成RRule插件，但Gemini说这一行要注释掉
+        
+        // ✨ 新增：自定义事件内容渲染 (为了显示待办的勾选框)
+        eventContent: function(arg) {
+            if (arg.event.extendedProps.isTodo) {
+                const isDone = arg.event.extendedProps.done;
+                
+                const container = document.createElement('div');
+                container.style.display = 'flex';
+                container.style.alignItems = 'center';
+                container.style.gap = '4px';
+                container.style.width = '100%';
+                container.style.overflow = 'hidden';
+                
+                const icon = document.createElement('i');
+                icon.className = isDone ? 'ri-checkbox-line' : 'ri-checkbox-blank-line';
+                icon.style.cursor = 'pointer';
+                icon.style.fontSize = '1.1em';
+                
+                // 阻止冒泡，防止触发编辑弹窗
+                icon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleTodoStatusInCalendar(arg.event.id);
+                });
+                
+                const title = document.createElement('div');
+                title.innerText = arg.event.title;
+                title.style.whiteSpace = 'nowrap';
+                title.style.overflow = 'hidden';
+                title.style.textOverflow = 'ellipsis';
+                title.style.flex = '1';
+                
+                if (isDone) {
+                    title.style.textDecoration = 'line-through';
+                    title.style.opacity = '0.8';
+                    container.style.opacity = '0.8';
+                }
+                
+                container.appendChild(icon);
+                container.appendChild(title);
+                
+                return { domNodes: [container] };
+            }
+            return null;
+        },
+
         // 时间网格配置 - 确保时间轴显示
         slotMinTime: savedMin,       // 最早显示时间
         slotMaxTime: savedMax,       // 最晚显示时间
@@ -945,10 +991,57 @@ function initCalendarSystem() {
             const eventIndex = events.findIndex(e => e.id === info.event.id);
             
             if (eventIndex !== -1) {
-                events[eventIndex].start = info.event.startStr;
-                events[eventIndex].end = info.event.endStr; // 移动时，结束时间也会相应平移
-                saveToStorage(events);
-                saveToCloud();
+                const eventData = events[eventIndex];
+                
+                // 检查是否为重复事件
+                if (eventData.rrule) {
+                    const choice = prompt("检测到这是重复事件，请选择：\n1. 仅移动当前日程\n2. 移动所有重复日程\n(点击取消则撤销操作)");
+                    
+                    if (choice === '1') {
+                        // 1. 仅移动当前：将原日程的该实例时间加入 exdate (排除日期)
+                        if (!eventData.exdate) eventData.exdate = [];
+                        // 获取移动前的时间作为排除项 (需格式化为本地时间以匹配 rrule)
+                        const oldStartStr = formatDateForInput(info.oldEvent.start);
+                        if (!eventData.exdate.includes(oldStartStr)) {
+                            eventData.exdate.push(oldStartStr);
+                        }
+                        
+                        // 2. 创建一个新的独立事件
+                        const newEvent = {
+                            ...eventData,
+                            id: Date.now().toString(), // 生成新ID
+                            title: eventData.title,
+                            start: info.event.startStr, // 使用拖拽后的新时间
+                            end: info.event.endStr,
+                            rrule: undefined,           // 移除重复规则
+                            exdate: undefined,          // 移除排除日期
+                            extendedProps: { ...eventData.extendedProps }
+                        };
+                        
+                        events.push(newEvent);
+                        events[eventIndex] = eventData; // 更新原事件的 exdate
+                        
+                        saveToStorage(events);
+                        saveToCloud();
+                        refreshCalendarData(); // 刷新视图以显示分离后的事件
+                    } else if (choice === '2') {
+                        // 移动所有：更新原事件的基准时间
+                        eventData.start = info.event.startStr;
+                        eventData.end = info.event.endStr;
+                        events[eventIndex] = eventData;
+                        saveToStorage(events);
+                        saveToCloud();
+                    } else {
+                        info.revert(); // 用户取消，回退拖拽
+                    }
+                } else {
+                    // 普通事件直接更新
+                    eventData.start = info.event.startStr;
+                    eventData.end = info.event.endStr;
+                    events[eventIndex] = eventData;
+                    saveToStorage(events);
+                    saveToCloud();
+                }
             } else {
                 // 2. 如果找不到，说明可能是 Todo 拖进来的
                 updateTodoDate(info.event.id, info.event.startStr);
@@ -1088,6 +1181,10 @@ function refreshCalendarData() {
         // 如果有重复规则，添加 rrule
         if (event.rrule) {
             eventData.rrule = event.rrule;
+            // 支持排除日期 (exdate)
+            if (event.exdate) {
+                eventData.exdate = event.exdate;
+            }
         }
         
         try {
@@ -1103,29 +1200,30 @@ function refreshCalendarData() {
 
     // 添加待排期任务
     todos.forEach(todo => {
-        if (!todo.done) {
-            // 1. 如果没有日期 -> 放进左侧待排期区域
-            if (!todo.date) {
-                if (containerEl) {
-                    const div = document.createElement('div');
-                    div.className = 'draggable-item';
-                    div.setAttribute('data-id', todo.id);
-                    div.innerText = todo.text;
-                    containerEl.appendChild(div);
-                }
-            } 
-            // 2. 如果有日期 -> 直接渲染在日历上
-            else {
-                calendarInstance.addEvent({
-                    id: todo.id,
-                    title: todo.text,
-                    start: todo.date,
-                    allDay: !todo.date.includes('T'), // 简单判断：无时间则全天
-                    backgroundColor: '#10b981',       // 绿色区分待办
-                    borderColor: '#10b981',
-                    extendedProps: { isTodo: true }
-                });
+        // 1. 如果没有日期 -> 放进左侧待排期区域 (仅显示未完成)
+        if (!todo.date) {
+            if (!todo.done && containerEl) {
+                const div = document.createElement('div');
+                div.className = 'draggable-item';
+                div.setAttribute('data-id', todo.id);
+                div.innerText = todo.text;
+                containerEl.appendChild(div);
             }
+        } 
+        // 2. 如果有日期 -> 直接渲染在日历上 (显示所有，已完成的变灰)
+        else {
+            calendarInstance.addEvent({
+                id: todo.id,
+                title: todo.text,
+                start: todo.date,
+                allDay: !todo.date.includes('T'), 
+                backgroundColor: todo.done ? '#9ca3af' : '#10b981', // 完成变灰，未完成绿色
+                borderColor: todo.done ? '#9ca3af' : '#10b981',
+                extendedProps: { 
+                    isTodo: true,
+                    done: todo.done 
+                }
+            });
         }
     });
 }
@@ -1185,6 +1283,28 @@ function closeCalendar() {
     document.getElementById('calendarModal').close();
 }
 
+// 🔄 新增：在日历中切换待办状态
+function toggleTodoStatusInCalendar(id) {
+    const numericId = Number(id);
+    // 调用已有的 toggleTodo 逻辑 (它会处理数据更新、云同步和重复任务生成)
+    toggleTodo(numericId);
+    // 额外刷新日历视图以反映变化
+    refreshCalendarData();
+}
+
+// 🔄 新增：切换日程自定义间隔输入框显示
+function toggleEventCustomInterval() {
+    const repeatVal = document.getElementById('eventRepeat').value;
+    const group = document.getElementById('eventCustomIntervalGroup');
+    const endGroup = document.getElementById('eventCustomEndDateGroup');
+    if (group) {
+        group.style.display = (repeatVal === 'custom') ? 'flex' : 'none';
+    }
+    if (endGroup) {
+        endGroup.style.display = (repeatVal !== '') ? 'flex' : 'none';
+    }
+}
+
 // 📝 事件编辑模态框控制
 function openEventModal(startDate = null) {
     const modal = document.getElementById('eventModal');
@@ -1202,6 +1322,11 @@ function openEventModal(startDate = null) {
     document.getElementById('eventReminder').value = '0';
     document.getElementById('eventRepeat').value = '';
     document.getElementById('eventDescription').value = '';
+    
+    // 重置自定义重复字段
+    document.getElementById('eventCustomInterval').value = 1;
+    document.getElementById('eventCustomEndDate').value = '';
+    toggleEventCustomInterval();
     
     // 🎨 注入并重置颜色
     injectColorPicker();
@@ -1225,6 +1350,7 @@ function openEventModal(startDate = null) {
     }
     
     currentEventId = null;
+    currentEventStart = null;
     modal.showModal();
 }
 
@@ -1266,21 +1392,48 @@ function openEventModalForEdit(event) {
     const currentColor = event.backgroundColor || EVENT_COLORS[0].value;
     selectColor(currentColor);
 
+    // 重置自定义字段
+    document.getElementById('eventCustomInterval').value = 1;
+    document.getElementById('eventCustomEndDate').value = '';
+
+    // 尝试从本地存储获取原始数据以获得准确的 rrule (因为 FullCalendar 的 event 对象可能不包含完整的 rrule 配置)
+    const storedEvents = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+    const storedEvent = storedEvents.find(e => e.id === event.id);
+    const sourceEvent = storedEvent || event;
+
     // 设置重复规则
-    if (event.rrule) {
+    if (sourceEvent.rrule) {
         let repeatValue = '';
-        switch (event.rrule.freq) {
+        const freq = sourceEvent.rrule.freq;
+        const interval = sourceEvent.rrule.interval || 1;
+
+        // 回显截止日期 (UNTIL)
+        if (sourceEvent.rrule.until) {
+             const untilDate = new Date(sourceEvent.rrule.until);
+             const y = untilDate.getFullYear();
+             const m = String(untilDate.getMonth() + 1).padStart(2, '0');
+             const d = String(untilDate.getDate()).padStart(2, '0');
+             document.getElementById('eventCustomEndDate').value = `${y}-${m}-${d}`;
+        }
+
+        // 回显间隔
+        if (interval > 1) {
+             document.getElementById('eventCustomInterval').value = interval;
+        }
+
+        switch (freq) {
             case RRule.DAILY:
-                if (event.rrule.byweekday) {
+                if (sourceEvent.rrule.byweekday) {
                     // 检查是否是工作日
                     const weekdays = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR];
-                    if (JSON.stringify(event.rrule.byweekday) === JSON.stringify(weekdays)) {
+                    if (JSON.stringify(sourceEvent.rrule.byweekday) === JSON.stringify(weekdays)) {
                         repeatValue = 'workweek';
                     } else {
                         repeatValue = 'daily';
                     }
                 } else {
-                    repeatValue = 'daily';
+                    // 如果有间隔且不是工作日，则是自定义
+                    repeatValue = (interval > 1) ? 'custom' : 'daily';
                 }
                 break;
             case RRule.WEEKLY:
@@ -1294,14 +1447,17 @@ function openEventModalForEdit(event) {
     } else {
         document.getElementById('eventRepeat').value = '';
     }
+    toggleEventCustomInterval();
     
     currentEventId = event.id;
+    currentEventStart = event.start; // 记录当前实例的开始时间
     modal.showModal();
 }
 
 function closeEventModal() {
     document.getElementById('eventModal').close();
     currentEventId = null;
+    currentEventStart = null;
 }
 
 // 💾 保存事件
@@ -1313,6 +1469,8 @@ function saveEvent() {
         const location = document.getElementById('eventLocation').value.trim();
         const reminder = parseInt(document.getElementById('eventReminder').value) || 0;
         const repeat = document.getElementById('eventRepeat').value;
+        const customInterval = parseInt(document.getElementById('eventCustomInterval').value) || 1;
+        const customEndDate = document.getElementById('eventCustomEndDate').value;
         const description = document.getElementById('eventDescription').value.trim();  // 读取备注并去除首尾空格
         const color = document.getElementById('eventColorInput').value || EVENT_COLORS[0].value; // 获取颜色
         
@@ -1359,6 +1517,13 @@ function saveEvent() {
                     dtstart: start
                 };
                 
+                // 处理截止日期 (UNTIL)
+                if (customEndDate) {
+                    const u = new Date(customEndDate);
+                    u.setHours(23, 59, 59); // 设置为当天结束
+                    rruleConfig.until = u;
+                }
+
                 switch (repeat) {
                     case 'daily':
                         rruleConfig.freq = RRule.DAILY;
@@ -1372,6 +1537,10 @@ function saveEvent() {
                     case 'workweek':
                         rruleConfig.freq = RRule.DAILY;
                         rruleConfig.byweekday = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR];
+                        break;
+                    case 'custom':
+                        rruleConfig.freq = RRule.DAILY;
+                        rruleConfig.interval = customInterval;
                         break;
                 }
                 
@@ -1450,23 +1619,54 @@ function saveEvent() {
 // �️ 删除事件
 function deleteEvent() {
     if (!currentEventId) return;
+
+    let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+    const eventIndex = events.findIndex(e => e.id === currentEventId);
     
-    if (confirm('确定要删除这个事件吗？')) {
-        // 1. 从本地存储移除
-        let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
-        events = events.filter(e => e.id !== currentEventId);
-        saveToStorage(events);
+    if (eventIndex === -1) {
+        closeEventModal();
+        return;
+    }
+
+    const eventData = events[eventIndex];
+    let needSave = false;
+
+    // 检查是否为重复事件
+    if (eventData.rrule) {
+        const choice = prompt("检测到这是重复事件，请选择：\n1. 仅删除当前日程\n2. 删除所有重复日程\n(点击取消则不进行操作)");
         
-        // 2. 从日历视图移除
-        if (calendarInstance) {
-            const event = calendarInstance.getEventById(currentEventId);
-            if (event) event.remove();
+        if (choice === '1') {
+            // 仅删除当前：将当前实例的时间添加到 exdate (排除日期) 中
+            if (!eventData.exdate) eventData.exdate = [];
+            
+            // 格式化当前时间为 ISO 字符串 (YYYY-MM-DDTHH:mm) 以匹配 rrule
+            const dateStr = formatDateForInput(currentEventStart);
+            if (!eventData.exdate.includes(dateStr)) {
+                eventData.exdate.push(dateStr);
+            }
+            events[eventIndex] = eventData;
+            needSave = true;
+        } else if (choice === '2') {
+            // 删除所有
+            if (confirm('确定要删除所有重复事件吗？')) {
+                events.splice(eventIndex, 1);
+                needSave = true;
+            }
         }
-        
-        // 3. 关闭弹窗并同步
+    } else {
+        // 普通事件直接删除
+        if (confirm('确定要删除这个事件吗？')) {
+            events.splice(eventIndex, 1);
+            needSave = true;
+        }
+    }
+
+    if (needSave) {
+        saveToStorage(events);
+        refreshCalendarData(); // 刷新日历以应用更改
         closeEventModal();
         saveToCloud();
-        console.log('事件已删除:', currentEventId);
+        console.log('事件已删除/更新');
     }
 }
 

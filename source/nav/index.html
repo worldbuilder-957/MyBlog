@@ -316,7 +316,7 @@ layout: false
             </div>
 
             <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="flex: 1;">
                     <label>提醒时间</label>
                     <select id="eventReminder">
                         <option value="0">无提醒</option>
@@ -327,15 +327,24 @@ layout: false
                         <option value="1440">提前1天</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="flex: 1;">
                     <label>重复</label>
-                    <select id="eventRepeat">
+                    <select id="eventRepeat" onchange="toggleEventCustomInterval()">
                         <option value="">不重复</option>
                         <option value="daily">每天</option>
                         <option value="weekly">每周</option>
                         <option value="monthly">每月</option>
                         <option value="workweek">工作日</option>
+                        <option value="custom">自定义(天)</option>
                     </select>
+                </div>
+                <div class="form-group" id="eventCustomIntervalGroup" style="display:none; flex: 0.5; min-width: 0;">
+                    <label>间隔天数</label>
+                    <input type="number" id="eventCustomInterval" min="1" value="1" placeholder="天数">
+                </div>
+                <div class="form-group" id="eventCustomEndDateGroup" style="display:none; flex: 1;">
+                    <label>重复截止</label>
+                    <input type="date" id="eventCustomEndDate">
                 </div>
             </div>
 
