@@ -1747,8 +1747,6 @@ function saveEvent() {
         // 👇 新增这一行：自动上传
         saveToCloud();
         
-        console.log('事件保存成功:', eventData);
-    } catch (error) {
         console.error('保存事件时出错:', error);
         alert('保存失败，请检查控制台错误信息');
     }
