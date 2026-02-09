@@ -753,11 +753,10 @@ let currentEventStart = null; // 当前编辑事件的开始时间 (用于区分
 
 // --- 🎨 新增：颜色分类配置 ---
 const EVENT_COLORS = [
-    { name: '默认', value: '#6b7280' }, // 灰色
-    { name: '工作', value: '#67a1ffe1' }, // 蓝色
-    { name: '生活', value: '#33edafe2' }, // 绿色
-    { name: '重要', value: '#ea6363e7' }, // 红色
-    { name: '学习', value: '#a37efbdc' }  // 紫色
+    { name: '工作', value: '#d9f3fd', textColor: '#0c4a6e' }, // 浅蓝背景 -> 深蓝文字
+    { name: '生活', value: '#d9f5d6', textColor: '#14532d' }, // 浅绿背景 -> 深绿文字
+    { name: '重要', value: '#ea6363e7', textColor: '#7f1d1d' }, // 浅红背景 -> 深红文字
+    { name: '学习', value: '#f8def8', textColor: '#581c87' }  // 浅紫背景 -> 深紫文字
 ];
 
 // 辅助：注入颜色选择器 UI (自动插在"备注"前面)
@@ -1162,15 +1161,19 @@ function refreshCalendarData() {
         if (endTime && !endTime.includes('T')) {
             endTime = endTime.includes(':') ? endTime : endTime + 'T10:00:00';
         }
+
+        // 🎨 根据背景色查找对应的文字颜色
+        const bg = event.backgroundColor || '#6b7280';
+        const colorConfig = EVENT_COLORS.find(c => c.value === bg);
         
         const eventData = {
             id: event.id,
             title: event.title || '未命名事件',
             start: startTime,
             end: endTime,
-            backgroundColor: event.backgroundColor || '#6b7280',
-            borderColor: event.borderColor || '#6b7280',
-            textColor: event.textColor || '#ffffff',
+            backgroundColor: bg,
+            borderColor: bg,
+            textColor: colorConfig ? colorConfig.textColor : '#ffffff',
             extendedProps: {
                 location: extendedProps.location || '',
                 reminder: extendedProps.reminder || 0,
