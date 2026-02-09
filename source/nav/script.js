@@ -926,6 +926,7 @@ function initCalendarSystem() {
                 
                 return { domNodes: [container] };
             }
+            return true;
         },
 
         // 时间网格配置 - 确保时间轴显示
@@ -1218,6 +1219,7 @@ function refreshCalendarData() {
                 allDay: !todo.date.includes('T'), 
                 backgroundColor: todo.done ? '#9ca3af' : '#10b981', // 完成变灰，未完成绿色
                 borderColor: todo.done ? '#9ca3af' : '#10b981',
+                textColor: '#ffffff',
                 extendedProps: { 
                     isTodo: true,
                     done: todo.done 
