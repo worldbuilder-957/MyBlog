@@ -1573,6 +1573,7 @@ function saveEvent() {
         
         // 🆕 准备保存的事件列表
         const eventsToSave = [];
+        const batchGroupId = Date.now().toString(); // 生成一个批次ID，用于关联批量生成的日程
 
         // 🆕 判断逻辑：如果设置了重复 且 设置了截止日期 -> 批量生成独立事件
         if (repeat && customEndDate) {
@@ -1597,6 +1598,7 @@ function saveEvent() {
                     end: formatDateForInput(currentEnd),
                     backgroundColor: color,
                     borderColor: color,
+                    groupId: batchGroupId, // ✨ 关键：添加组ID，标记它们为同一系列
                     extendedProps: {
                         location: location || '',
                         reminder: reminder || 0,
@@ -1656,32 +1658,72 @@ function saveEvent() {
             if (originalIndex !== -1) {
                 const originalEvent = events[originalIndex];
                 // 只有当是 RRule 重复事件，且我们有当前实例的开始时间时才触发
-                if (originalEvent.rrule && currentEventStart) {
+                // ✨ 修改：同时支持 RRule 和 groupId (批量生成) 的检测
+                if ((originalEvent.rrule || originalEvent.groupId) && currentEventStart) {
                     const choice = prompt("检测到这是重复日程，请选择修改模式：\n1. 仅修改当前日程\n2. 修改当前及之后的所有日程\n3. 修改所有日程\n(点击取消则返回)");
                     
                     if (choice === '1') {
-                        // 1. 仅修改当前 -> 原事件添加 exdate (排除当前日期)
-                        if (!originalEvent.exdate) originalEvent.exdate = [];
-                        // 格式化当前实例原本的时间
-                        const dateStr = formatDateForInput(currentEventStart);
-                        if (!originalEvent.exdate.includes(dateStr)) {
-                            originalEvent.exdate.push(dateStr);
+                        // 1. 仅修改当前
+                        if (originalEvent.rrule) {
+                            // RRule模式：原事件添加 exdate
+                            if (!originalEvent.exdate) originalEvent.exdate = [];
+                            const dateStr = formatDateForInput(currentEventStart);
+                            if (!originalEvent.exdate.includes(dateStr)) {
+                                originalEvent.exdate.push(dateStr);
+                            }
+                            events[originalIndex] = originalEvent;
+                            currentEventId = null; // 新增独立事件
+                        } else if (originalEvent.groupId) {
+                            // Group模式：仅修改当前 -> 意味着当前事件脱离组织
+                            // 逻辑：直接让后续的保存逻辑覆盖当前ID的事件，但我们要确保新事件不再带有旧的 groupId
+                            // 如果 eventsToSave 是个列表（因为表单里还选着重复），我们只取第一个作为“当前事件”
+                            // 并清除它的 groupId (或者生成新的)
+                            
+                            // 这里简化处理：
+                            // 既然是“仅修改当前”，我们假设用户希望当前这个变成独立的，或者变成一个新系列的开头
+                            // 我们不需要对旧的 events 数组做删除操作，只需要让 saveToStorage 正常更新当前ID即可
+                            // 但需要把 eventsToSave 里的 groupId 换掉或去掉，防止混淆
+                            
+                            // 如果用户在表单里取消了重复，eventsToSave 只有一个，正好。
+                            // 如果用户在表单里保留了重复，eventsToSave 是一组新序列。
+                            // 此时“仅修改当前”的语义比较模糊，通常意味着“把当前这个改成新的样子（可能带新重复），旧系列的其他人不变”
+                            
+                            // 动作：将当前事件从旧 Group 中移除 (逻辑上) -> 其实就是更新它时，赋予它新的属性
+                            // 只要不删除其他 groupId 的事件即可。
+                            // 唯一要注意的是：如果 eventsToSave 是个序列，我们是替换当前事件，还是追加？
+                            // 现有逻辑是：有 currentEventId 就替换 events[eventIndex]，然后 push 剩下的。
+                            // 这符合预期。
                         }
-                        events[originalIndex] = originalEvent; // 更新原事件
-                        currentEventId = null; // 标记为新事件创建 (不覆盖原事件，而是新增一个独立事件)
                         
                     } else if (choice === '2') {
-                        // 2. 修改当前及之后 -> 原事件截断
-                        // 设置 until 为当前实例开始时间之前 (结束旧系列)
-                        const untilDate = new Date(currentEventStart);
-                        untilDate.setMilliseconds(untilDate.getMilliseconds() - 1);
-                        originalEvent.rrule.until = untilDate;
-                        
-                        events[originalIndex] = originalEvent; // 更新原事件
-                        currentEventId = null; // 标记为新事件创建 (新系列从当前开始)
+                        // 2. 修改当前及之后
+                        if (originalEvent.rrule) {
+                            // RRule模式：截断旧的
+                            const untilDate = new Date(currentEventStart);
+                            untilDate.setMilliseconds(untilDate.getMilliseconds() - 1);
+                            originalEvent.rrule.until = untilDate;
+                            events[originalIndex] = originalEvent;
+                            currentEventId = null; 
+                        } else if (originalEvent.groupId) {
+                            // Group模式：删除旧系列中 >= 当前时间的
+                            const startThres = new Date(currentEventStart).getTime();
+                            events = events.filter(e => {
+                                // 保留：不同组的 OR (同组 且 时间早于当前的)
+                                if (e.groupId !== originalEvent.groupId) return true;
+                                return new Date(e.start).getTime() < startThres;
+                            });
+                            currentEventId = null; // 视为新增
+                        }
                         
                     } else if (choice === '3') {
-                        // 3. 修改所有 -> 保持 currentEventId，后续逻辑会直接覆盖原事件
+                        // 3. 修改所有
+                        if (originalEvent.rrule) {
+                            // RRule模式：直接覆盖（保持 currentEventId 即可）
+                        } else if (originalEvent.groupId) {
+                            // Group模式：删除旧系列所有事件
+                            events = events.filter(e => e.groupId !== originalEvent.groupId);
+                            currentEventId = null; // 视为新增
+                        }
                     } else {
                         return; // 用户取消
                     }
@@ -1787,6 +1829,18 @@ function deleteEvent() {
             // 删除所有
             if (confirm('确定要删除所有重复事件吗？')) {
                 events.splice(eventIndex, 1);
+                needSave = true;
+            }
+        }
+    } else if (eventData.groupId) {
+        // ✨ 新增：处理批量生成的独立事件删除
+        const choice = prompt("检测到这是重复日程(批量)，请选择：\n1. 仅删除当前日程\n2. 删除所有重复日程\n(点击取消则不进行操作)");
+        if (choice === '1') {
+            events.splice(eventIndex, 1);
+            needSave = true;
+        } else if (choice === '2') {
+            if (confirm('确定要删除该系列所有日程吗？')) {
+                events = events.filter(e => e.groupId !== eventData.groupId);
                 needSave = true;
             }
         }
@@ -2106,4 +2160,80 @@ async function fetchExchangeRates() {
 }
 
 fetchExchangeRates();
+// #endregion
+
+// #region 14. 导出功能 =========================
+function exportToICS() {
+    const events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+    if (events.length === 0) {
+        alert('没有可导出的日程');
+        return;
+    }
+
+    let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//My Blog//Calendar//CN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH'
+    ];
+
+    // 辅助：格式化日期为 ICS 格式 (YYYYMMDDTHHMMSS) - 本地时间
+    const formatICSDate = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        
+        const pad = n => n < 10 ? '0' + n : n;
+        return '' + date.getFullYear() + 
+               pad(date.getMonth() + 1) + 
+               pad(date.getDate()) + 'T' + 
+               pad(date.getHours()) + 
+               pad(date.getMinutes()) + 
+               pad(date.getSeconds());
+    };
+
+    events.forEach(event => {
+        icsContent.push('BEGIN:VEVENT');
+        icsContent.push(`UID:${event.id}@myblog`);
+        // DTSTAMP 使用 UTC 格式
+        icsContent.push('DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z');
+        
+        if (event.start) icsContent.push(`DTSTART:${formatICSDate(event.start)}`);
+        if (event.end) icsContent.push(`DTEND:${formatICSDate(event.end)}`);
+        
+        icsContent.push(`SUMMARY:${event.title || '未命名日程'}`);
+        
+        if (event.extendedProps?.description) {
+            icsContent.push(`DESCRIPTION:${event.extendedProps.description.replace(/\n/g, '\\n')}`);
+        }
+        if (event.extendedProps?.location) {
+            icsContent.push(`LOCATION:${event.extendedProps.location}`);
+        }
+
+        // 尝试处理 RRule
+        if (event.rrule && typeof RRule !== 'undefined') {
+            try {
+                const rruleOptions = { ...event.rrule };
+                if (rruleOptions.dtstart) rruleOptions.dtstart = new Date(rruleOptions.dtstart);
+                if (rruleOptions.until) rruleOptions.until = new Date(rruleOptions.until);
+                const rule = new RRule(rruleOptions);
+                icsContent.push(rule.toString());
+            } catch (e) { console.warn('RRule export skipped', e); }
+        }
+
+        icsContent.push('END:VEVENT');
+    });
+
+    icsContent.push('END:VCALENDAR');
+
+    // 创建下载链接
+    const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `calendar_export_${new Date().toISOString().slice(0,10)}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 // #endregion
