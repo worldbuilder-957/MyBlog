@@ -246,6 +246,35 @@ function renderTodos(filterText = '') {
     updateToggleIcon(); // 确保图标状态正确
 }
 
+// 🆕 新增：计算下一个日期的辅助函数
+function calculateNextDate(baseDate, repeat, intervalVal) {
+    const date = new Date(baseDate);
+    const interval = parseInt(intervalVal) || 1;
+    
+    switch (repeat) {
+        case 'daily':
+            date.setDate(date.getDate() + 1);
+            break;
+        case 'weekly':
+            date.setDate(date.getDate() + 7);
+            break;
+        case 'monthly':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'workweek':
+            // 简单逻辑：如果是周五+3，周六+2，其他+1
+            const day = date.getDay();
+            if (day === 5) date.setDate(date.getDate() + 3);
+            else if (day === 6) date.setDate(date.getDate() + 2);
+            else date.setDate(date.getDate() + 1);
+            break;
+        case 'custom':
+            date.setDate(date.getDate() + interval);
+            break;
+    }
+    return date;
+}
+
 // --- B. 数据操作 ---
 function saveTask() {
     const text = document.getElementById('taskInput').value;
@@ -273,18 +302,62 @@ function saveTask() {
         }
     } else {
         // 新增模式：创建新任务
-        const newTodo = {
-            id: Date.now(),
-            text: text,
-            date: date,
-            loc: loc,
-            tags: tags,
-            done: false,
-            repeat: repeat,
-            customInterval: customInterval,
-            customEndDate: customEndDate
-        };
-        todos.unshift(newTodo);
+        // 🆕 修改：如果设置了重复且有截止日期，则批量生成
+        if (repeat && customEndDate && date) {
+            let currentDate = new Date(date + 'T00:00:00'); // 确保本地时间
+            const endDate = new Date(customEndDate + 'T00:00:00');
+            let count = 0;
+            const MAX_TASKS = 365; // 防止死循环
+
+            // 批量生成列表 (先收集，再反向插入，保证最早的在最上面)
+            const batchTodos = [];
+
+            while (currentDate <= endDate && count < MAX_TASKS) {
+                // 格式化日期 YYYY-MM-DD
+                const y = currentDate.getFullYear();
+                const m = String(currentDate.getMonth() + 1).padStart(2, '0');
+                const d = String(currentDate.getDate()).padStart(2, '0');
+                const dateStr = `${y}-${m}-${d}`;
+
+                const newTodo = {
+                    id: Date.now() + count, // 确保ID唯一
+                    text: text,
+                    date: dateStr,
+                    loc: loc,
+                    tags: tags,
+                    done: false,
+                    repeat: '', // ⚠️ 批量生成后，单条任务不再标记为重复，避免完成时再次生成
+                    customInterval: '',
+                    customEndDate: ''
+                };
+                batchTodos.push(newTodo);
+
+                // 计算下一个日期
+                currentDate = calculateNextDate(currentDate, repeat, customInterval);
+                count++;
+            }
+            
+            // 倒序插入，这样最早日期的任务会在列表最上面 (因为是 unshift)
+            for (let i = batchTodos.length - 1; i >= 0; i--) {
+                todos.unshift(batchTodos[i]);
+            }
+
+            if (count >= MAX_TASKS) alert('为防止卡顿，仅生成了前 365 个重复任务');
+        } else {
+            // 原有逻辑：单个创建 (无限重复或无重复)
+            const newTodo = {
+                id: Date.now(),
+                text: text,
+                date: date,
+                loc: loc,
+                tags: tags,
+                done: false,
+                repeat: repeat,
+                customInterval: customInterval,
+                customEndDate: customEndDate
+            };
+            todos.unshift(newTodo);
+        }
     }
 
     saveAndRender();
@@ -1498,80 +1571,141 @@ function saveEvent() {
             return;
         }
         
-        // 创建事件对象
-        const eventData = {
-            id: currentEventId || Date.now().toString(),
-            title: title,
-            start: start,
-            end: end,
-            backgroundColor: color, // 🎨 保存背景色
-            borderColor: color,     // 🎨 边框同色
-            extendedProps: {
-                location: location || '',
-                reminder: reminder || 0,
-                description: description || ''  // 确保备注字段始终存在，即使为空字符串
-            }
-        };
-        
-        // 添加重复规则（仅在RRule可用时）
-        if (repeat && typeof RRule !== 'undefined') {
-            try {
-                let rruleConfig = {
-                    freq: null,
-                    dtstart: start
+        // 🆕 准备保存的事件列表
+        const eventsToSave = [];
+
+        // 🆕 判断逻辑：如果设置了重复 且 设置了截止日期 -> 批量生成独立事件
+        if (repeat && customEndDate) {
+            let currentStart = new Date(startDate);
+            const duration = endDate.getTime() - startDate.getTime(); // 保持时长
+            const untilDate = new Date(customEndDate);
+            untilDate.setHours(23, 59, 59, 999);
+            
+            let count = 0;
+            const MAX_EVENTS = 365; // 防止死循环
+
+            while (currentStart <= untilDate && count < MAX_EVENTS) {
+                // 计算当前结束时间
+                const currentEnd = new Date(currentStart.getTime() + duration);
+                
+                // 构造事件
+                const eventData = {
+                    // 如果是第一个且是编辑模式，复用ID；否则生成新ID
+                    id: (count === 0 && currentEventId) ? currentEventId : (Date.now() + count).toString(),
+                    title: title,
+                    start: formatDateForInput(currentStart),
+                    end: formatDateForInput(currentEnd),
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: {
+                        location: location || '',
+                        reminder: reminder || 0,
+                        description: description || ''
+                    }
+                    // ⚠️ 批量生成时不使用 rrule，它们是独立的
                 };
                 
-                // 处理截止日期 (UNTIL)
-                if (customEndDate) {
-                    const u = new Date(customEndDate);
-                    u.setHours(23, 59, 59); // 设置为当天结束
-                    rruleConfig.until = u;
-                }
-
-                switch (repeat) {
-                    case 'daily':
-                        rruleConfig.freq = RRule.DAILY;
-                        break;
-                    case 'weekly':
-                        rruleConfig.freq = RRule.WEEKLY;
-                        break;
-                    case 'monthly':
-                        rruleConfig.freq = RRule.MONTHLY;
-                        break;
-                    case 'workweek':
-                        rruleConfig.freq = RRule.DAILY;
-                        rruleConfig.byweekday = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR];
-                        break;
-                    case 'custom':
-                        rruleConfig.freq = RRule.DAILY;
-                        rruleConfig.interval = customInterval;
-                        break;
-                }
+                eventsToSave.push(eventData);
                 
-                if (rruleConfig.freq !== null) {
-                    eventData.rrule = rruleConfig;
-                }
-            } catch (rruleError) {
-                console.warn('RRule配置失败，将保存为不重复事件:', rruleError);
-                // 如果RRule配置失败，继续保存但不添加重复规则
+                // 计算下一次时间 (复用之前的 calculateNextDate 函数)
+                currentStart = calculateNextDate(currentStart, repeat, customInterval);
+                count++;
             }
+            
+            if (count >= MAX_EVENTS) alert('为防止卡顿，仅生成了前 365 个重复日程');
+
+        } else {
+            // 🆕 原有逻辑：单次事件 或 无限重复(RRule)
+            const eventData = {
+                id: currentEventId || Date.now().toString(),
+                title: title,
+                start: start,
+                end: end,
+                backgroundColor: color,
+                borderColor: color,
+                extendedProps: {
+                    location: location || '',
+                    reminder: reminder || 0,
+                    description: description || ''
+                }
+            };
+            
+            // 添加重复规则（仅在RRule可用时，且未触发批量生成逻辑）
+            if (repeat && typeof RRule !== 'undefined') {
+                try {
+                    let rruleConfig = { freq: null, dtstart: start };
+                    switch (repeat) {
+                        case 'daily': rruleConfig.freq = RRule.DAILY; break;
+                        case 'weekly': rruleConfig.freq = RRule.WEEKLY; break;
+                        case 'monthly': rruleConfig.freq = RRule.MONTHLY; break;
+                        case 'workweek': rruleConfig.freq = RRule.DAILY; rruleConfig.byweekday = [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR]; break;
+                        case 'custom': rruleConfig.freq = RRule.DAILY; rruleConfig.interval = customInterval; break;
+                    }
+                    if (rruleConfig.freq !== null) eventData.rrule = rruleConfig;
+                } catch (e) { console.warn('RRule配置失败', e); }
+            }
+            eventsToSave.push(eventData);
         }
         
-        // 保存到存储
+        // --- 保存到 localStorage ---
         let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+        
+        // 🆕 处理重复事件的特殊编辑逻辑 (RRule)
+        if (currentEventId) {
+            const originalIndex = events.findIndex(e => e.id === currentEventId);
+            if (originalIndex !== -1) {
+                const originalEvent = events[originalIndex];
+                // 只有当是 RRule 重复事件，且我们有当前实例的开始时间时才触发
+                if (originalEvent.rrule && currentEventStart) {
+                    const choice = prompt("检测到这是重复日程，请选择修改模式：\n1. 仅修改当前日程\n2. 修改当前及之后的所有日程\n3. 修改所有日程\n(点击取消则返回)");
+                    
+                    if (choice === '1') {
+                        // 1. 仅修改当前 -> 原事件添加 exdate (排除当前日期)
+                        if (!originalEvent.exdate) originalEvent.exdate = [];
+                        // 格式化当前实例原本的时间
+                        const dateStr = formatDateForInput(currentEventStart);
+                        if (!originalEvent.exdate.includes(dateStr)) {
+                            originalEvent.exdate.push(dateStr);
+                        }
+                        events[originalIndex] = originalEvent; // 更新原事件
+                        currentEventId = null; // 标记为新事件创建 (不覆盖原事件，而是新增一个独立事件)
+                        
+                    } else if (choice === '2') {
+                        // 2. 修改当前及之后 -> 原事件截断
+                        // 设置 until 为当前实例开始时间之前 (结束旧系列)
+                        const untilDate = new Date(currentEventStart);
+                        untilDate.setMilliseconds(untilDate.getMilliseconds() - 1);
+                        originalEvent.rrule.until = untilDate;
+                        
+                        events[originalIndex] = originalEvent; // 更新原事件
+                        currentEventId = null; // 标记为新事件创建 (新系列从当前开始)
+                        
+                    } else if (choice === '3') {
+                        // 3. 修改所有 -> 保持 currentEventId，后续逻辑会直接覆盖原事件
+                    } else {
+                        return; // 用户取消
+                    }
+                }
+            }
+        }
         
         if (currentEventId) {
             // 更新已有事件
             const eventIndex = events.findIndex(e => e.id === currentEventId);
             if (eventIndex !== -1) {
-                events[eventIndex] = eventData;
+                // 替换旧事件为新序列的第一个
+                events[eventIndex] = eventsToSave[0];
+                // 追加剩余的
+                for (let i = 1; i < eventsToSave.length; i++) {
+                    events.push(eventsToSave[i]);
+                }
             } else {
                 // 如果找不到，添加为新事件
-                events.push(eventData);
+                events.push(...eventsToSave);
             }
         } else {
             // 添加新事件
-            events.push(eventData);
+            events.push(...eventsToSave);
         }
         
         // 保存到localStorage
