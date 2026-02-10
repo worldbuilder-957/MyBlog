@@ -40,7 +40,7 @@ html, body {
 
 /* #region 1 --- 手机端适配 --- */
 @media (max-width: 768px) {
-    /* #region ===1. 布局重构：从“四列”变成“单列”=== */
+    /*  ===1. 布局重构：从“四列”变成“单列”=== */
     .container {
         /* 强制变成 1 列，所有卡片垂直堆叠 */
         grid-template-columns: 1fr !important;
@@ -135,18 +135,6 @@ html, body {
 }
 /* #endregion */
 
-body {
-    background-color: var(--bg-color);
-    color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 /* Bento Grid 布局核心 */
 .container {
     width: 100%;
@@ -176,6 +164,61 @@ body {
 .card:hover {
     transform: translateY(-2px);
 }
+
+#install-btn {
+    display: none; 
+    padding: 10px 20px; 
+    background: #007bff; 
+    color: white; 
+    border: none; 
+    border-radius: 5px; 
+    margin: 10px;
+}
+
+/* #region --- 0. 顶部横幅背景 (Banner) --- */
+.top-banner-bg {
+    /* 1. 绝对定位：让它脱离文档流，浮在最上面 */
+    position: fixed; /* 使用 fixed 可以让背景在滚动时固定不动，视觉效果更好 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50vh; /* 高度设为屏幕高度的 50%，你可以根据需要调整 (例如 400px) */
+    z-index: -1;  /* 关键！层级设为负数，让它乖乖呆在内容文字的后面 */
+    pointer-events: none;    /* 让鼠标事件穿透，避免遮挡点击 */
+
+    /* 2. 设置背景图片 */
+    /* ⚠️ 这里的路径换成自己的图片路径 */
+    background-image: url('banner.webp'); 
+    background-size: cover;      /* 确保图片撑满整个区域，不变形 */
+    background-position: center top; /* 图片对齐方式：居中且靠上 */
+    filter: saturate(150%) contrast(110%) brightness(1.0);
+    transform: scale(1.05);
+    background-repeat: no-repeat;
+
+    opacity: 0.9;           /* 0.9 的透明度，稍微淡化一点 */
+
+    /* 3. 核心科技：渐变蒙版 (Magic Mask) */
+    /* 原理：蒙版中黑色的部分可见，透明的部分不可见。*/
+    /* 下面的代码表示：从顶部开始到 85% 的位置是完全可见的，然后慢慢渐变到 100% 的位置完全透明。*/
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 100%);
+}
+
+/* 配合调整：为了让背景不被 body 的背景色遮挡 */
+body {
+    background-color: var(--bg-color);            /* 保持背景色 */
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0; 
+    padding: 20px;
+    min-height: 100vh;
+    display: flex; 
+    justify-content: center;                 /* 水平依然居中 */
+    align-items: flex-start;                 /* 现在改成 flex-start (顶部对齐) */
+    position: relative;
+    z-index: 0;
+}
+/* #endregion */
 
 /* #region --- 1. 全局搜索栏 ---  */
 .search-box {
@@ -229,7 +272,7 @@ body {
 }
 .engine-selector:hover { background: rgba(255,255,255,0.1); }
 
-/* 下拉菜单 (平时隐藏) */
+/* 引擎选择器下拉菜单 (平时隐藏) */
 .engine-dropdown {
     display: none; /* 默认隐藏 */
     position: absolute;
@@ -247,7 +290,10 @@ body {
 }
 
 /* 显示状态 (JS会切换这个类) */
-.engine-dropdown.show { display: flex; animation: fadeIn 0.2s ease; }
+.engine-dropdown.show { 
+    display: flex; 
+    animation: fadeIn 0.2s ease; 
+}
 
 /*  单个选项 */
 .engine-option {
@@ -481,7 +527,7 @@ body {
 }
 /* #endregion */
 
-/* #region --- 汇率卡片样式 --- */
+/* #region --- 6. 汇率卡片样式 --- */
 .rate-card {
     grid-column: span 1;
     display: flex;
@@ -534,7 +580,7 @@ body {
 }
 /* #endregion */
 
-/* #region --- 6. 快捷方式 (跨4列) --- */
+/* #region --- 7. 快捷方式 (跨4列) --- */
 .links-card {
     grid-column: span 3;
     flex-direction: row;
@@ -563,9 +609,9 @@ body {
 }
 /* #endregion */
 
-/* #region --- 7. 待办事项升级版样式 --- */
+/* #region --- 8. 待办事项组件 --- */
 
-/* 1. 顶部工具栏 */
+/* 8.1 顶部工具栏 */
 .icon-btn {
     background: none; border: none; cursor: pointer;
     font-size: 1.2rem; color: var(--accent); padding: 4px;
@@ -573,7 +619,7 @@ body {
 }
 .icon-btn:hover { background: rgba(0,0,0,0.05); }
 
-/* 2. 搜索框 */
+/* 8.2 搜索框 */
 .todo-filter {
     display: flex; align-items: center;
     background: rgba(0,0,0,0.03);
@@ -756,51 +802,7 @@ body {
     background: transparent; 
     color: var(--text-sub); 
 }
-
-/* ----- 顶部横幅背景 (Banner) ----- */
-.top-banner-bg {
-    /* 1. 绝对定位：让它脱离文档流，浮在最上面 */
-    position: fixed; /* 使用 fixed 可以让背景在滚动时固定不动，视觉效果更好 */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 50vh; /* 高度设为屏幕高度的 50%，你可以根据需要调整 (例如 400px) */
-    z-index: -1;  /* 关键！层级设为负数，让它乖乖呆在内容文字的后面 */
-    pointer-events: none;    /* 让鼠标事件穿透，避免遮挡点击 */
-
-    /* 2. 设置背景图片 */
-    /* ⚠️ 请把这里的路径换成你自己的图片路径 */
-    background-image: url('banner.webp'); 
-    background-size: cover;      /* 确保图片撑满整个区域，不变形 */
-    background-position: center top; /* 图片对齐方式：居中且靠上 */
-    filter: saturate(150%) contrast(110%) brightness(1.0);
-    transform: scale(1.05);
-    background-repeat: no-repeat;
-
-    opacity: 0.9;           /* 0.9 的透明度，稍微淡化一点 */
-
-    /* 3. 核心科技：渐变蒙版 (Magic Mask) */
-    /* 原理：蒙版中黑色的部分可见，透明的部分不可见。*/
-    /* 下面的代码表示：从顶部开始到 85% 的位置是完全可见的，然后慢慢渐变到 100% 的位置完全透明。*/
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 100%);
-}
-
-/* 配合调整：为了让背景不被 body 的背景色遮挡 */
-body {
-    background-color: var(--bg-color);            /* 保持背景色 */
-    color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    margin: 0; 
-    padding: 20px;
-    min-height: 100vh;
-    display: flex; 
-    justify-content: center; /* 水平依然居中 */
-    align-items: flex-start; /* 现在改成 flex-start (顶部对齐) */
-
-    position: relative;
-    z-index: 0;
-}
+/* #endregion */
 
 /* #region --- Wetab 风格应用网格 --- */
 .links-card {
@@ -865,9 +867,9 @@ body {
 }
 /* #endregion */
 
-/* #region --- 8. 全屏日历系统样式 --- */
+/* #region --- 8. 日历系统组件 --- */
 
-/* #region --- 8.1 全屏弹窗容器 --- */
+/*  --- 8.1 全屏弹窗容器 --- */
 .full-screen-modal {
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;   /* 👈 修改：改用 100% 避免视口单位计算误差 */
@@ -890,7 +892,6 @@ body {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
-/* #endregion */
 
 /* 2. 布局骨架 */
 .calendar-layout {
@@ -1119,6 +1120,7 @@ body {
         justify-content: center;
     }
 }
+/* #endregion */
 
 /* #region --- 日程编辑模态框样式 --- */
 .modal {

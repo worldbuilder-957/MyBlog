@@ -185,7 +185,7 @@ updateCalendar();
 setInterval(updateCalendar, 60 * 60 * 1000);
 // #endregion =================================================================
 
-// #region 4. 待办人物事项======================================================
+// #region 4. 待办任务事项======================================================
 // 该模块实现一个待办事项系统，支持标题、日期、地点、标签等多种属性
 const todoListEl = document.getElementById('todoList');
 const modal = document.getElementById('taskModal');
@@ -524,114 +524,115 @@ function toggleCustomInterval() {
     }
 }
 
-// #region --- 标签输入系统逻辑 ---
+    // #region --- 标签输入系统逻辑 ---
 
-// 预设一组好看的颜色
-const TAG_PALETTE = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
+    // 预设一组好看的颜色
+    const TAG_PALETTE = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
 
-// 根据字符串生成固定颜色
-function getTagColor(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) hash += str.charCodeAt(i);
-    return TAG_PALETTE[hash % TAG_PALETTE.length];
-}
+    // 根据字符串生成固定颜色
+    function getTagColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) hash += str.charCodeAt(i);
+        return TAG_PALETTE[hash % TAG_PALETTE.length];
+    }
 
-// 渲染标签胶囊
-function renderTagChips() {
-    const container = document.getElementById('tagChipsContainer');
-    if (!container) return;
-    container.innerHTML = '';
+    // 渲染标签胶囊
+    function renderTagChips() {
+        const container = document.getElementById('tagChipsContainer');
+        if (!container) return;
+        container.innerHTML = '';
 
-    currentEditingTags.forEach((tag, index) => {
-        const chip = document.createElement('div');
-        chip.className = 'tag-chip-edit';
-        chip.style.backgroundColor = getTagColor(tag);
-        chip.innerHTML = `
-            <span>${tag}</span>
-            <div class="tag-remove" onclick="removeTag(${index}, event)">
-                <i class="ri-close-line"></i>
-            </div>
-        `;
-        container.appendChild(chip);
-    });
-}
+        currentEditingTags.forEach((tag, index) => {
+            const chip = document.createElement('div');
+            chip.className = 'tag-chip-edit';
+            chip.style.backgroundColor = getTagColor(tag);
+            chip.innerHTML = `
+                <span>${tag}</span>
+                <div class="tag-remove" onclick="removeTag(${index}, event)">
+                    <i class="ri-close-line"></i>
+                </div>
+            `;
+            container.appendChild(chip);
+        });
+    }
 
-// 添加标签
-function addTag(tagName) {
-    const tag = tagName.trim();
-    if (tag && !currentEditingTags.includes(tag)) {
-        currentEditingTags.push(tag);
+    // 添加标签
+    function addTag(tagName) {
+        const tag = tagName.trim();
+        if (tag && !currentEditingTags.includes(tag)) {
+            currentEditingTags.push(tag);
+            renderTagChips();
+        }
+        document.getElementById('tagInput').value = '';
+        document.getElementById('tagDropdown').style.display = 'none';
+    }
+
+    // 移除标签
+    function removeTag(index, e) {
+        if(e) e.stopPropagation(); // 防止触发输入框聚焦
+        currentEditingTags.splice(index, 1);
         renderTagChips();
     }
-    document.getElementById('tagInput').value = '';
-    document.getElementById('tagDropdown').style.display = 'none';
-}
 
-// 移除标签
-function removeTag(index, e) {
-    if(e) e.stopPropagation(); // 防止触发输入框聚焦
-    currentEditingTags.splice(index, 1);
-    renderTagChips();
-}
-
-// 初始化标签输入监听
-function initTagInputSystem() {
-    const input = document.getElementById('tagInput');
-    const dropdown = document.getElementById('tagDropdown');
-    
-    if (!input || !dropdown) return;
-
-    // 1. 监听输入：显示联想
-    input.addEventListener('input', (e) => {
-        const val = e.target.value.trim().toLowerCase();
-        if (!val) {
-            dropdown.style.display = 'none';
-            return;
-        }
-
-        // 收集所有已存在的标签 (去重)
-        const allTags = new Set();
-        todos.forEach(t => t.tags.forEach(tag => allTags.add(tag)));
+    // 初始化标签输入监听
+    function initTagInputSystem() {
+        const input = document.getElementById('tagInput');
+        const dropdown = document.getElementById('tagDropdown');
         
-        // 过滤：匹配输入 且 不在当前已选列表中
-        const matches = Array.from(allTags).filter(t => 
-            t.toLowerCase().includes(val) && !currentEditingTags.includes(t)
-        );
+        if (!input || !dropdown) return;
 
-        if (matches.length > 0) {
-            dropdown.innerHTML = matches.map(t => 
-                `<div class="tag-option" onclick="addTag('${t}')">${t}</div>`
-            ).join('');
-            dropdown.style.display = 'block';
-        } else {
-            dropdown.style.display = 'none';
-        }
-    });
+        // 1. 监听输入：显示联想
+        input.addEventListener('input', (e) => {
+            const val = e.target.value.trim().toLowerCase();
+            if (!val) {
+                dropdown.style.display = 'none';
+                return;
+            }
 
-    // 2. 监听回车：创建新标签
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addTag(input.value);
-        }
-        // Backspace 删除最后一个标签 (可选体验优化)
-        if (e.key === 'Backspace' && input.value === '' && currentEditingTags.length > 0) {
-            removeTag(currentEditingTags.length - 1);
-        }
-    });
+            // 收集所有已存在的标签 (去重)
+            const allTags = new Set();
+            todos.forEach(t => t.tags.forEach(tag => allTags.add(tag)));
+            
+            // 过滤：匹配输入 且 不在当前已选列表中
+            const matches = Array.from(allTags).filter(t => 
+                t.toLowerCase().includes(val) && !currentEditingTags.includes(t)
+            );
 
-    // 3. 点击外部关闭下拉
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.tag-input-wrapper') && !e.target.closest('.tag-dropdown')) {
-            dropdown.style.display = 'none';
-        }
-    });
-}
+            if (matches.length > 0) {
+                dropdown.innerHTML = matches.map(t => 
+                    `<div class="tag-option" onclick="addTag('${t}')">${t}</div>`
+                ).join('');
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        });
 
-// 初始化
-renderTodos();
-initTagInputSystem(); // 启动标签系统
-// #endregion ================================================================= 
+        // 2. 监听回车：创建新标签
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag(input.value);
+            }
+            // Backspace 删除最后一个标签 (可选体验优化)
+            if (e.key === 'Backspace' && input.value === '' && currentEditingTags.length > 0) {
+                removeTag(currentEditingTags.length - 1);
+            }
+        });
+
+        // 3. 点击外部关闭下拉
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.tag-input-wrapper') && !e.target.closest('.tag-dropdown')) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    // 初始化
+    renderTodos();
+    initTagInputSystem(); // 启动标签系统
+    // #endregion ================================================================= 
+// #endregion =================================================================
 
 // #region 5. 天气温度功能==============================================
 // 该模块通过API接入和风天气，获取珠海当前天气与温度信息，并更新页面显示
@@ -2162,7 +2163,7 @@ async function fetchExchangeRates() {
 fetchExchangeRates();
 // #endregion
 
-// #region 14. 导出功能 =========================
+// #region 14. 日程导出功能 =========================
 function exportToICS() {
     const events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
     if (events.length === 0) {
