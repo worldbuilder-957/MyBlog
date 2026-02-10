@@ -928,6 +928,9 @@ function initCalendarSystem() {
             center: 'title',
             right: 'dayGridMonth,timeGridThreeDay,timeGridWeek,timeGridDay' // 月视图、三日视图、周视图、日视图
         },
+        buttonText: {
+            today: '今日'
+        },
         // 🎨 自定义标题格式：2026年1月（Wxx）
         datesSet: function(info) {
             if (info.view.type === 'dayGridMonth') return; // 月视图保持默认
