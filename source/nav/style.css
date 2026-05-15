@@ -1371,6 +1371,50 @@ body {
     background: rgba(0,0,0,0.1);
 }
 
+/* 订阅类型徽章 */
+.sub-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sub-type-badge.ics {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+}
+
+.sub-type-badge.caldav {
+    background: rgba(139, 92, 246, 0.12);
+    color: #8b5cf6;
+}
+
+/* CalDAV 认证字段过渡动画 */
+#caldavAuthFields {
+    transition: all 0.25s ease;
+}
+
+/* 订阅表单 select 基础样式 */
+#subTypeSelect {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#subTypeSelect:focus {
+    border-color: var(--accent);
+}
+
 .btn-danger {
     color: #ef4444;
 }

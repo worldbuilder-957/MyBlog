@@ -2182,6 +2182,30 @@ const SUBSCRIPTION_COLORS = [
     { name: '石板灰', bg: '#7B8D8E', text: '#ffffff' }
 ];
 
+// 订阅类型切换 UI
+function onSubTypeChange() {
+    const typeSelect = document.getElementById('subTypeSelect');
+    const authFields = document.getElementById('caldavAuthFields');
+    const urlLabel = document.getElementById('subUrlLabel');
+    const urlInput = document.getElementById('subUrlInput');
+
+    if (!typeSelect || !authFields || !urlLabel || !urlInput) return;
+
+    const isCaldav = typeSelect.value === 'caldav';
+
+    authFields.style.display = isCaldav ? 'flex' : 'none';
+
+    if (isCaldav) {
+        urlLabel.textContent = 'CalDAV 服务器地址';
+        urlInput.placeholder = 'https://your-server.com/dav/';
+        urlInput.type = 'text';
+    } else {
+        urlLabel.textContent = 'ICS 订阅链接';
+        urlInput.placeholder = 'https://...ics';
+        urlInput.type = 'text';
+    }
+}
+
 // CORS 代理列表（按优先级依次尝试）
 const CORS_PROXIES = [
     '',                                      // 直连（第 1 优先）
@@ -2485,19 +2509,291 @@ function saveSubscriptionCache(cache) {
     localStorage.setItem(SUB_CACHE_KEY, JSON.stringify(cache));
 }
 
+// ==========================================
+// CalDAV 客户端（纯前端实现）
+// ==========================================
+
+/**
+ * CalDAV 通用请求（支持 PROPFIND / REPORT 等自定义方法）
+ */
+async function caldavFetch(url, method, body, username, password, extraHeaders) {
+    extraHeaders = extraHeaders || {};
+
+    const authHeaders = {};
+    if (username && password) {
+        authHeaders['Authorization'] = 'Basic ' + btoa(username + ':' + password);
+    }
+
+    const fetchOptions = {
+        method: method,
+        headers: Object.assign({
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Accept': 'application/xml, text/xml, */*'
+        }, extraHeaders, authHeaders),
+        body: body || undefined
+    };
+
+    // 尝试直连
+    try {
+        const resp = await fetch(url, fetchOptions);
+        if (resp.ok) return resp;
+        console.warn('[CalDAV] 直连返回 ' + resp.status + ': ' + resp.statusText);
+    } catch (e) {
+        console.warn('[CalDAV] 直连失败:', e.message);
+    }
+
+    // 尝试通过 CORS 代理（POST + method override）
+    for (var i = 0; i < CORS_PROXIES.length; i++) {
+        var proxy = CORS_PROXIES[i];
+        if (!proxy) continue;
+        try {
+            var proxyUrl = proxy + encodeURIComponent(url);
+            var proxyResp = await fetch(proxyUrl, {
+                method: 'POST',
+                headers: Object.assign({
+                    'Content-Type': 'application/xml; charset=utf-8',
+                    'Accept': 'application/xml, text/xml, */*',
+                    'X-HTTP-Method-Override': method
+                }, extraHeaders, authHeaders),
+                body: body || undefined
+            });
+            if (proxyResp.ok) return proxyResp;
+        } catch (e) {
+            console.warn('[CalDAV] 代理 ' + proxy + ' 失败:', e.message);
+        }
+    }
+
+    throw new Error('CalDAV 连接失败：直连和代理均不可用。请确认服务器支持跨域，或配置反向代理。');
+}
+
+/**
+ * 解析 XML 中所有 href 和 displayname
+ */
+function caldavParseHrefs(xmlText, baseUrl) {
+    var calendars = [];
+    // 匹配 <D:href>...</D:href> 或 <d:href>...</d:href>
+    var hrefRegex = /<[dD]:href>([^<]+)<\/[dD]:href>/g;
+    var displayRegex = /<[dD]:displayname>([^<]*)<\/[dD]:displayname>/g;
+
+    var hrefs = [];
+    var displays = [];
+    var m;
+
+    while ((m = hrefRegex.exec(xmlText)) !== null) {
+        hrefs.push(m[1]);
+    }
+    while ((m = displayRegex.exec(xmlText)) !== null) {
+        displays.push(m[1]);
+    }
+
+    // 检查哪些资源是日历集合（包含 calendar 资源类型）
+    var blocks = xmlText.split(/<[dD]:response>/i);
+    for (var b = 1; b < blocks.length; b++) {
+        var block = blocks[b];
+        if (block.indexOf('calendar') !== -1 || block.indexOf('CALENDAR') !== -1) {
+            var hrefMatch = /<[dD]:href>([^<]+)<\/[dD]:href>/i.exec(block);
+            var nameMatch = /<[dD]:displayname>([^<]*)<\/[dD]:displayname>/i.exec(block);
+            if (hrefMatch) {
+                calendars.push({
+                    href: hrefMatch[1],
+                    name: (nameMatch && nameMatch[1]) || hrefMatch[1].split('/').filter(Boolean).pop() || '日历'
+                });
+            }
+        }
+    }
+
+    // 如果没通过 resource type 找到，退回使用所有 href
+    if (calendars.length === 0) {
+        for (var j = 0; j < hrefs.length; j++) {
+            if (hrefs[j] !== baseUrl && hrefs[j] !== '/') {
+                calendars.push({
+                    href: hrefs[j],
+                    name: displays[j] || hrefs[j].split('/').filter(Boolean).pop() || ('日历 ' + (j + 1))
+                });
+            }
+        }
+    }
+
+    return calendars;
+}
+
+/**
+ * PROPFIND 发现 CalDAV 日历集合
+ * @returns {Array} [{href, name}, ...]
+ */
+async function caldavDiscoverCalendars(serverUrl, username, password) {
+    var propfindBody = '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">' +
+        '<D:prop>' +
+        '<D:resourcetype/>' +
+        '<D:displayname/>' +
+        '</D:prop>' +
+        '</D:propfind>';
+
+    var resp = await caldavFetch(serverUrl, 'PROPFIND', propfindBody, username, password, {
+        'Depth': '1'
+    });
+
+    var xmlText = await resp.text();
+    return caldavParseHrefs(xmlText, serverUrl);
+}
+
+/**
+ * REPORT calendar-query 获取日历事件
+ */
+async function caldavFetchEvents(calendarUrl, username, password) {
+    var now = new Date();
+    var threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    var sixMonthsLater = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+
+    var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+    var fmtDate = function(d) {
+        return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T000000Z';
+    };
+
+    var reportBody = '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">' +
+        '<D:prop>' +
+        '<D:getetag/>' +
+        '<C:calendar-data/>' +
+        '</D:prop>' +
+        '<C:filter>' +
+        '<C:comp-filter name="VCALENDAR">' +
+        '<C:comp-filter name="VEVENT">' +
+        '<C:time-range start="' + fmtDate(threeMonthsAgo) + '" end="' + fmtDate(sixMonthsLater) + '"/>' +
+        '</C:comp-filter>' +
+        '</C:comp-filter>' +
+        '</C:filter>' +
+        '</C:calendar-query>';
+
+    var resp = await caldavFetch(calendarUrl, 'REPORT', reportBody, username, password, {
+        'Depth': '1'
+    });
+
+    return await resp.text();
+}
+
+/**
+ * 从 CalDAV REPORT 响应中提取 ICS 数据并解析为事件
+ */
+function caldavExtractICS(xmlText, subscriptionId) {
+    // 提取所有 <CALDAV:calendar-data> 或 <C:calendar-data> 中的内容
+    var cdRegex = /<[cC](?:ALDAV)?:calendar-data[^>]*>([\s\S]*?)<\/[cC](?:ALDAV)?:calendar-data>/gi;
+    var allICS = '';
+    var m;
+
+    while ((m = cdRegex.exec(xmlText)) !== null) {
+        allICS += m[1] + '\n';
+    }
+
+    if (!allICS.trim()) {
+        // 尝试提取 CDATA 中的内容
+        var cdataRegex = /<!\[CDATA\[([\s\S]*?)\]\]>/gi;
+        var cdataICS = '';
+        while ((m = cdataRegex.exec(xmlText)) !== null) {
+            if (m[1].indexOf('BEGIN:VEVENT') !== -1) {
+                cdataICS += m[1] + '\n';
+            }
+        }
+        if (cdataICS.trim()) {
+            allICS = cdataICS;
+        }
+    }
+
+    if (!allICS.trim()) {
+        throw new Error('CalDAV 响应中未找到日历事件数据');
+    }
+
+    // 用现有 ICS 解析器解析
+    var wrappedICS = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//CalDAV Client//EN\n' + allICS + '\nEND:VCALENDAR';
+    return parseICS(wrappedICS, subscriptionId);
+}
+
+/**
+ * 同步单个 CalDAV 订阅源
+ */
+async function syncCalDAVSubscription(sub) {
+    if (!sub.url) throw new Error('CalDAV 服务器地址为空');
+    if (!sub.username || !sub.password) throw new Error('CalDAV 需要用户名和密码');
+
+    // 如果 URL 已经是具体日历路径（以 .ics 结尾或包含具体日历标识），直接用 REPORT
+    if (sub.url.match(/\.ics$/i) || sub.url.indexOf('/calendars/') !== -1) {
+        var xmlText = await caldavFetchEvents(sub.url, sub.username, sub.password);
+        return caldavExtractICS(xmlText, sub.id);
+    }
+
+    // 否则先 PROPFIND 发现日历，再逐一获取事件
+    var calendars;
+    try {
+        calendars = await caldavDiscoverCalendars(sub.url, sub.username, sub.password);
+    } catch (e) {
+        // 如果 PROPFIND 失败，尝试直接 REPORT
+        console.warn('[CalDAV] PROPFIND 失败，尝试直接 REPORT:', e.message);
+        var xmlText2 = await caldavFetchEvents(sub.url, sub.username, sub.password);
+        return caldavExtractICS(xmlText2, sub.id);
+    }
+
+    if (calendars.length === 0) {
+        throw new Error('未在服务器上发现日历集合。请确认 CalDAV 地址正确。');
+    }
+
+    console.log('[CalDAV] 发现 ' + calendars.length + ' 个日历: ' + calendars.map(function(c) { return c.name; }).join(', '));
+
+    // 获取所有日历的事件并合并
+    var allEvents = [];
+    for (var i = 0; i < calendars.length; i++) {
+        try {
+            var calUrl = calendars[i].href;
+            // 拼接完整 URL
+            if (!calUrl.match(/^https?:\/\//)) {
+                var baseUrl = sub.url.replace(/\/+$/, '');
+                calUrl = baseUrl + (calUrl.charAt(0) === '/' ? '' : '/') + calUrl;
+            }
+            var xml = await caldavFetchEvents(calUrl, sub.username, sub.password);
+            var events = caldavExtractICS(xml, sub.id);
+            allEvents = allEvents.concat(events);
+            console.log('[CalDAV] 日历 "' + calendars[i].name + '" 获取 ' + events.length + ' 个事件');
+        } catch (e) {
+            console.warn('[CalDAV] 获取日历 "' + calendars[i].name + '" 失败:', e.message);
+        }
+    }
+
+    if (allEvents.length === 0) {
+        throw new Error('所有日历均未获取到事件');
+    }
+
+    return allEvents;
+}
+
+// ==========================================
+// 订阅管理器
+// ==========================================
+
 /**
  * 添加订阅源
  */
-async function addSubscription(name, url, color) {
+async function addSubscription(name, url, color, type, username, password) {
     if (!name || !url) {
         throw new Error('名称和链接不能为空');
     }
 
-    // 基本 URL 校验
-    try {
-        new URL(url);
-    } catch (e) {
-        throw new Error('无效的订阅链接格式');
+    type = type || 'ics';
+
+    // 基本 URL 校验（CalDAV URL 可能不是完整 URL 格式，宽松校验）
+    if (type === 'ics') {
+        try {
+            new URL(url);
+        } catch (e) {
+            throw new Error('无效的订阅链接格式');
+        }
+    } else {
+        // CalDAV URL 至少需要以 http:// 或 https:// 开头
+        if (!url.match(/^https?:\/\//)) {
+            throw new Error('CalDAV 地址需以 http:// 或 https:// 开头');
+        }
+        if (!username || !password) {
+            throw new Error('CalDAV 订阅需要提供用户名和密码');
+        }
     }
 
     const subs = getSubscriptions();
@@ -2506,7 +2802,10 @@ async function addSubscription(name, url, color) {
     const newSub = {
         id: id,
         name: name.trim(),
+        type: type,
         url: url.trim(),
+        username: username ? username.trim() : null,
+        password: password || null,
         color: color || SUBSCRIPTION_COLORS[subs.length % SUBSCRIPTION_COLORS.length].bg,
         textColor: SUBSCRIPTION_COLORS.find(function(c) { return c.bg === color; })?.text || '#ffffff',
         enabled: true,
@@ -2558,6 +2857,36 @@ async function syncSubscription(subId) {
     const sub = subs.find(function(s) { return s.id === subId; });
     if (!sub) return;
 
+    // --- CalDAV 路径 ---
+    if (sub.type === 'caldav') {
+        let events;
+        try {
+            events = await syncCalDAVSubscription(sub);
+        } catch (e) {
+            sub.error = e.message;
+            sub.lastSync = new Date().toISOString();
+            const idx = subs.findIndex(function(s) { return s.id === subId; });
+            if (idx !== -1) subs[idx] = sub;
+            saveSubscriptions(subs);
+            throw e;
+        }
+
+        // 保存缓存
+        const cache = getSubscriptionCache();
+        cache[subId] = events;
+        saveSubscriptionCache(cache);
+
+        sub.error = null;
+        sub.lastSync = new Date().toISOString();
+        const idx = subs.findIndex(function(s) { return s.id === subId; });
+        if (idx !== -1) subs[idx] = sub;
+        saveSubscriptions(subs);
+
+        console.log('[CalDAV] "' + sub.name + '" 同步成功，' + events.length + ' 个事件');
+        return events;
+    }
+
+    // --- ICS 路径 ---
     let lastError = null;
     let icsText = null;
 
@@ -2739,11 +3068,16 @@ function renderSubscriptionList() {
         const lastSyncText = sub.lastSync
             ? new Date(sub.lastSync).toLocaleString('zh-CN')
             : '从未同步';
+        const isCaldav = sub.type === 'caldav';
+        const typeBadge = isCaldav
+            ? '<span class="sub-type-badge caldav"><i class="ri-sync-line"></i> CalDAV</span>'
+            : '<span class="sub-type-badge ics"><i class="ri-link"></i> ICS</span>';
 
         return '<div class="subscription-item ' + statusClass + '">' +
             '<div class="sub-item-header">' +
                 '<span class="sub-color-dot" style="background:' + sub.color + '"></span>' +
                 '<span class="sub-name">' + escapeHtml(sub.name) + '</span>' +
+                typeBadge +
                 '<span class="sub-status-text">' + statusIcon + '</span>' +
             '</div>' +
             '<div class="sub-item-body">' +
@@ -2778,6 +3112,9 @@ async function handleAddSubscription() {
     const nameInput = document.getElementById('subNameInput');
     const urlInput = document.getElementById('subUrlInput');
     const colorInput = document.getElementById('subColorSelect');
+    const typeInput = document.getElementById('subTypeSelect');
+    const usernameInput = document.getElementById('subUsernameInput');
+    const passwordInput = document.getElementById('subPasswordInput');
     const addBtn = document.getElementById('subAddBtn');
 
     if (!nameInput || !urlInput) return;
@@ -2785,9 +3122,17 @@ async function handleAddSubscription() {
     const name = nameInput.value.trim();
     const url = urlInput.value.trim();
     const color = colorInput ? colorInput.value : null;
+    const type = typeInput ? typeInput.value : 'ics';
+    const username = usernameInput ? usernameInput.value.trim() : null;
+    const password = passwordInput ? passwordInput.value : null;
 
     if (!name || !url) {
         alert('请填写订阅名称和链接');
+        return;
+    }
+
+    if (type === 'caldav' && (!username || !password)) {
+        alert('CalDAV 订阅需要填写用户名和密码');
         return;
     }
 
@@ -2797,9 +3142,11 @@ async function handleAddSubscription() {
     }
 
     try {
-        await addSubscription(name, url, color);
+        await addSubscription(name, url, color, type, username, password);
         nameInput.value = '';
         urlInput.value = '';
+        if (usernameInput) usernameInput.value = '';
+        if (passwordInput) passwordInput.value = '';
         renderSubscriptionList();
         refreshCalendarData();
     } catch (e) {

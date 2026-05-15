@@ -374,22 +374,29 @@ layout: false
     </dialog>
 
     <!-- 订阅管理弹窗 -->
-    <dialog id="subscriptionModal" class="modal" style="max-width: 580px;">
+    <dialog id="subscriptionModal" class="modal" style="max-width: 620px;">
         <div class="modal-content">
             <h3><i class="ri-link"></i> 日历订阅管理</h3>
             <p style="font-size:0.8rem; color:var(--text-sub); margin:0;">
-                支持飞书日历、Google 日历等公开 ICS 链接
+                支持 ICS 公开链接 和 <span style="color:var(--accent);">CalDAV</span> 协议（Nextcloud / Baikal / iCloud 等）
             </p>
 
             <!-- 添加订阅表单 -->
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <div class="form-group" style="flex:1; min-width:120px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+                <div class="form-group" style="min-width:90px;">
+                    <label>订阅类型</label>
+                    <select id="subTypeSelect" onchange="onSubTypeChange()">
+                        <option value="ics">ICS 链接</option>
+                        <option value="caldav">CalDAV</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1; min-width:100px;">
                     <label>订阅名称</label>
                     <input type="text" id="subNameInput" placeholder="例如：我的飞书日历">
                 </div>
                 <div class="form-group" style="flex:2; min-width:180px;">
-                    <label>ICS 订阅链接</label>
-                    <input type="url" id="subUrlInput" placeholder="https://...ics">
+                    <label id="subUrlLabel">ICS 订阅链接</label>
+                    <input type="text" id="subUrlInput" placeholder="https://...ics">
                 </div>
                 <div class="form-group" style="min-width:80px;">
                     <label>颜色</label>
@@ -405,12 +412,24 @@ layout: false
                         <option value="#7B8D8E">石板灰</option>
                     </select>
                 </div>
-                <div class="form-group" style="align-self:flex-end;">
-                    <label>&nbsp;</label>
-                    <button class="btn primary" id="subAddBtn" onclick="handleAddSubscription()">
-                        <i class="ri-add-line"></i> 添加
-                    </button>
+            </div>
+
+            <!-- CalDAV 认证字段 (默认隐藏) -->
+            <div id="caldavAuthFields" style="display:none; gap:10px; flex-wrap:wrap; padding:10px; background:rgba(0,0,0,0.03); border-radius:8px; margin-bottom:8px;">
+                <div class="form-group" style="flex:1; min-width:130px;">
+                    <label>用户名</label>
+                    <input type="text" id="subUsernameInput" placeholder="user@example.com" autocomplete="off">
                 </div>
+                <div class="form-group" style="flex:1; min-width:130px;">
+                    <label>密码 / 应用专用密码</label>
+                    <input type="password" id="subPasswordInput" placeholder="••••••••" autocomplete="new-password">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top:6px; text-align:right;">
+                <button class="btn primary" id="subAddBtn" onclick="handleAddSubscription()">
+                    <i class="ri-add-line"></i> 添加
+                </button>
             </div>
 
             <!-- 订阅列表 -->
