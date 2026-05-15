@@ -282,6 +282,9 @@ layout: false
             <div class="main">
                 <div class="toolbar">
                     <div style="display: flex; gap: 10px;">
+                        <button onclick="openSubscriptionManager()" class="btn-add" title="管理日历订阅（飞书/Google ICS）">
+                            <i class="ri-link"></i> 订阅
+                        </button>
                         <button onclick="openEventModal()" class="btn-add">
                             <i class="ri-add-line"></i> 添加日程
                         </button>
@@ -366,6 +369,57 @@ layout: false
             <div class="modal-actions">
                 <button type="button" class="btn secondary" onclick="closeEventModal()">取消</button>
                 <button type="button" class="btn primary" onclick="saveEvent(); return false;">保存</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- 订阅管理弹窗 -->
+    <dialog id="subscriptionModal" class="modal" style="max-width: 580px;">
+        <div class="modal-content">
+            <h3><i class="ri-link"></i> 日历订阅管理</h3>
+            <p style="font-size:0.8rem; color:var(--text-sub); margin:0;">
+                支持飞书日历、Google 日历等公开 ICS 链接
+            </p>
+
+            <!-- 添加订阅表单 -->
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div class="form-group" style="flex:1; min-width:120px;">
+                    <label>订阅名称</label>
+                    <input type="text" id="subNameInput" placeholder="例如：我的飞书日历">
+                </div>
+                <div class="form-group" style="flex:2; min-width:180px;">
+                    <label>ICS 订阅链接</label>
+                    <input type="url" id="subUrlInput" placeholder="https://...ics">
+                </div>
+                <div class="form-group" style="min-width:80px;">
+                    <label>颜色</label>
+                    <select id="subColorSelect">
+                        <option value="">自动</option>
+                        <option value="#FF6384">珊瑚粉</option>
+                        <option value="#4BC0C0">翡翠绿</option>
+                        <option value="#FF9F40">琥珀橙</option>
+                        <option value="#9966FF">靛蓝</option>
+                        <option value="#36A2EB">钢蓝</option>
+                        <option value="#C9CB3F">橄榄绿</option>
+                        <option value="#E8A0BF">玫瑰金</option>
+                        <option value="#7B8D8E">石板灰</option>
+                    </select>
+                </div>
+                <div class="form-group" style="align-self:flex-end;">
+                    <label>&nbsp;</label>
+                    <button class="btn primary" id="subAddBtn" onclick="handleAddSubscription()">
+                        <i class="ri-add-line"></i> 添加
+                    </button>
+                </div>
+            </div>
+
+            <!-- 订阅列表 -->
+            <div id="subscriptionList" style="max-height: 350px; overflow-y: auto;"></div>
+
+            <!-- 底部操作 -->
+            <div class="modal-actions" style="flex-wrap:wrap; justify-content: space-between;">
+                <button class="btn secondary" id="subscriptionRefreshBtn" onclick="manualRefreshSubscriptions()"><i class="ri-refresh-line"></i> 刷新全部</button>
+                <button class="btn secondary" onclick="closeSubscriptionManager()">关闭</button>
             </div>
         </div>
     </dialog>

@@ -1270,3 +1270,113 @@ body {
     }
 }
 /* #endregion */
+
+/* #region --- 订阅管理弹窗样式 --- */
+
+/* 订阅列表项 */
+.subscription-item {
+    background: rgba(245, 245, 240, 0.6);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+}
+
+.subscription-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.sub-status-error {
+    border-left: 3px solid #ef4444;
+}
+
+.sub-status-ok {
+    border-left: 3px solid #22c55e;
+}
+
+.sub-status-paused {
+    border-left: 3px solid #9ca3af;
+    opacity: 0.7;
+}
+
+.sub-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.sub-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.sub-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    flex: 1;
+}
+
+.sub-status-text {
+    font-size: 0.85rem;
+}
+
+.sub-item-body {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+}
+
+.sub-url {
+    font-family: monospace;
+    word-break: break-all;
+    margin-bottom: 4px;
+    color: var(--text-sub);
+    font-size: 0.75rem;
+}
+
+.sub-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.75rem;
+}
+
+.sub-error {
+    color: #ef4444;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    word-break: break-word;
+}
+
+.sub-item-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.btn-small {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-small:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.btn-danger {
+    color: #ef4444;
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* #endregion */

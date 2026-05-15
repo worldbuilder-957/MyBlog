@@ -12,6 +12,9 @@ const ASSETS_TO_CACHE = [
   '/nav/banner.webp'
 ];
 
+// ICS 订阅缓存名称（独立缓存 bucket，便于管理和清理）
+const ICS_CACHE_NAME = 'nav-ics-subscriptions-v1';
+
 // 1. 安装：缓存资源
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -29,29 +32,54 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
+        if (key !== CACHE_NAME && key !== ICS_CACHE_NAME) {
           console.log('[SW] Removing old cache', key);
           return caches.delete(key);
         }
+        return Promise.resolve();
       }));
     })
   );
   return self.clients.claim();
 });
 
-// 3. 拦截请求：优先缓存，网络兜底
+// 3. 拦截请求：区分静态资源（Cache-First）和 ICS 订阅（Network-First）
 self.addEventListener('fetch', (event) => {
   // 只拦截 http/https 请求
-  if (!event.request.url.startsWith('http')) return;
+  const reqUrl = event.request.url;
+  if (!reqUrl.startsWith('http')) return;
 
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // 缓存中有，直接返回
-      if (response) {
-        return response;
-      }
-      // 缓存没有，去网络拉取
-      return fetch(event.request);
-    })
-  );
+  // 判断是否为 ICS 订阅请求
+  // 特征：URL 包含 .ics、CORS 代理、webcal 协议
+  const isICSRequest =
+    reqUrl.includes('.ics') ||
+    reqUrl.includes('corsproxy.io') ||
+    reqUrl.includes('allorigins.win') ||
+    reqUrl.includes('webcal://');
+
+  if (isICSRequest) {
+    // Network-First 策略：优先从网络获取最新日历数据
+    // 网络成功 → 更新 ICS 缓存（供离线降级）
+    // 网络失败 → 从 ICS 缓存中读取旧数据
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          const cloned = networkResponse.clone();
+          caches.open(ICS_CACHE_NAME).then((cache) => {
+            cache.put(event.request, cloned);
+          });
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    // Cache-First 策略：优先缓存，网络兜底（原有逻辑）
+    event.respondWith(
+      caches.match(event.request).then((response) => {
+        return response || fetch(event.request);
+      })
+    );
+  }
 });

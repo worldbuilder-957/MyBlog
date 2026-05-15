@@ -1170,6 +1170,8 @@ function refreshCalendarData() {
     const calendarEvents = JSON.parse(localStorage.getItem('calendarEvents')) || [];
     const todos = JSON.parse(localStorage.getItem('myRichTodos')) || [];
     const containerEl = document.getElementById('external-events');
+    // 加载订阅事件缓存
+    const subCache = JSON.parse(localStorage.getItem('subscriptionEventsCache') || '{}');
     
     // 清空旧数据
     if (containerEl) {
@@ -1239,6 +1241,38 @@ function refreshCalendarData() {
         } catch (error) {
             console.error('添加事件失败:', error, eventData);
         }
+    });
+
+    // --- 注入订阅日历事件 ---
+    const subscriptions = JSON.parse(localStorage.getItem('calendarSubscriptions') || '[]');
+    subscriptions.filter(s => s.enabled).forEach(sub => {
+        const cachedEvents = subCache[sub.id] || [];
+        cachedEvents.forEach(ev => {
+            try {
+                calendarInstance.addEvent({
+                    id: ev.id,
+                    title: ev.title || '(无标题)',
+                    start: ev.start,
+                    end: ev.end || ev.start,
+                    allDay: ev.allDay || false,
+                    backgroundColor: sub.color || '#9b59b6',
+                    borderColor: sub.color || '#9b59b6',
+                    textColor: sub.textColor || '#ffffff',
+                    editable: false,
+                    startEditable: false,
+                    durationEditable: false,
+                    extendedProps: {
+                        isSubscription: true,
+                        subscriptionId: sub.id,
+                        subscriptionName: sub.name,
+                        description: ev.description || '',
+                        location: ev.location || ''
+                    }
+                });
+            } catch (e) {
+                console.warn('添加订阅事件失败:', e, ev);
+            }
+        });
     });
 
     // 添加待排期任务
@@ -2127,6 +2161,697 @@ async function fetchExchangeRates() {
 }
 
 fetchExchangeRates();
+// #endregion
+
+// #region 15. 日历订阅模块 (ICS 解析 + 管理) =========================
+
+// --- 订阅数据持久化 Key ---
+const SUBSCRIPTIONS_KEY = 'calendarSubscriptions';
+const SUB_CACHE_KEY = 'subscriptionEventsCache';
+const AUTO_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 分钟
+
+// 预设订阅颜色（与本地事件颜色区分）
+const SUBSCRIPTION_COLORS = [
+    { name: '珊瑚粉', bg: '#FF6384', text: '#ffffff' },
+    { name: '翡翠绿', bg: '#4BC0C0', text: '#ffffff' },
+    { name: '琥珀橙', bg: '#FF9F40', text: '#ffffff' },
+    { name: '靛蓝',   bg: '#9966FF', text: '#ffffff' },
+    { name: '钢蓝',   bg: '#36A2EB', text: '#ffffff' },
+    { name: '橄榄绿', bg: '#C9CB3F', text: '#1a1a1a' },
+    { name: '玫瑰金', bg: '#E8A0BF', text: '#1a1a1a' },
+    { name: '石板灰', bg: '#7B8D8E', text: '#ffffff' }
+];
+
+// CORS 代理列表（按优先级依次尝试）
+const CORS_PROXIES = [
+    '',                                      // 直连（第 1 优先）
+    'https://corsproxy.io/?',                // 备选 1
+    'https://api.allorigins.win/raw?url=',   // 备选 2
+];
+
+// ==========================================
+// ICS 解析器（纯前端，无第三方依赖）
+// ==========================================
+
+/**
+ * 解析 ICS 文本为事件数组
+ * @param {string} icsText - ICS 文件原始文本
+ * @param {string} subscriptionId - 订阅源 ID（用于生成事件 ID 前缀）
+ * @returns {Array} 事件对象数组
+ */
+function parseICS(icsText, subscriptionId) {
+    if (!icsText || typeof icsText !== 'string') {
+        throw new Error('无效的 ICS 内容');
+    }
+
+    // 1. 展开折叠行（以空格/Tab 开头的续行）
+    const unfolded = icsText.replace(/\r?\n[ \t]/g, '');
+
+    // 2. 提取所有 VEVENT 块
+    const eventBlocks = [];
+    const lines = unfolded.split(/\r?\n/);
+    let inEvent = false;
+    let currentBlock = [];
+    let inCalendar = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        if (line.toUpperCase() === 'BEGIN:VCALENDAR') {
+            inCalendar = true;
+        } else if (line.toUpperCase() === 'END:VCALENDAR') {
+            inCalendar = false;
+        } else if (line.toUpperCase() === 'BEGIN:VEVENT' && inCalendar) {
+            inEvent = true;
+            currentBlock = [];
+        } else if (line.toUpperCase() === 'END:VEVENT' && inEvent) {
+            inEvent = false;
+            if (currentBlock.length > 0) {
+                eventBlocks.push(currentBlock.join('\n'));
+            }
+        } else if (inEvent) {
+            currentBlock.push(line);
+        }
+    }
+
+    if (eventBlocks.length === 0) {
+        throw new Error('ICS 文件中未找到任何事件 (VEVENT)');
+    }
+
+    // 3. 解析每个 VEVENT
+    const events = [];
+    for (let idx = 0; idx < eventBlocks.length; idx++) {
+        try {
+            const event = parseVEvent(eventBlocks[idx], subscriptionId, idx);
+            if (event) events.push(event);
+        } catch (e) {
+            console.warn('解析第 ' + (idx + 1) + ' 个事件失败:', e.message);
+        }
+    }
+
+    return events;
+}
+
+/**
+ * 解析单个 VEVENT 块
+ */
+function parseVEvent(block, subscriptionId, index) {
+    const props = {};
+
+    // 按行解析属性
+    const lines = block.split('\n');
+    for (const line of lines) {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx === -1) continue;
+
+        let propName = line.substring(0, colonIdx).trim().toUpperCase();
+        let propValue = line.substring(colonIdx + 1).trim();
+
+        // 处理带参数属性，如 DTSTART;VALUE=DATE:20250101
+        const semicolonIdx = propName.indexOf(';');
+        if (semicolonIdx !== -1) {
+            const params = propName.substring(semicolonIdx + 1).split(';');
+            propName = propName.substring(0, semicolonIdx);
+            // 提取 VALUE= 参数
+            for (const p of params) {
+                const eqIdx = p.indexOf('=');
+                if (eqIdx !== -1) {
+                    const pKey = p.substring(0, eqIdx).trim().toUpperCase();
+                    const pVal = p.substring(eqIdx + 1).trim().toUpperCase();
+                    props['PARAM_' + pKey] = pVal;
+                }
+            }
+        }
+
+        if (!props[propName]) {
+            props[propName] = propValue;
+        }
+    }
+
+    // 必须有 DTSTART
+    if (!props['DTSTART']) {
+        throw new Error('事件缺少 DTSTART');
+    }
+
+    const rawStart = props['DTSTART'];
+    const rawEnd = props['DTEND'] || rawStart;
+    const isAllDay = props['PARAM_VALUE'] === 'DATE' || 
+                     (rawStart.length === 8 && !rawStart.includes('T'));
+
+    // 解析 ISO 日期
+    const start = parseICSDate(rawStart, isAllDay);
+    const end = parseICSDate(rawEnd, isAllDay);
+
+    if (!start) {
+        throw new Error('无法解析日期: ' + rawStart);
+    }
+
+    // 处理 RRULE
+    let rrule = null;
+    if (props['RRULE']) {
+        rrule = parseRRule(props['RRULE'], start);
+    }
+
+    // 生成唯一 ID
+    const uid = props['UID'] || (subscriptionId + '_evt_' + index + '_' + Date.now());
+    const safeUid = uid.replace(/[^a-zA-Z0-9@._-]/g, '_');
+
+    const event = {
+        id: 'ical_' + safeUid,
+        title: decodeICSString(props['SUMMARY'] || '(无标题)'),
+        start: start,
+        end: end,
+        allDay: isAllDay,
+        description: decodeICSString(props['DESCRIPTION'] || ''),
+        location: decodeICSString(props['LOCATION'] || ''),
+        isSubscription: true,
+        subscriptionId: subscriptionId
+    };
+
+    if (rrule) {
+        event.rrule = rrule;
+    }
+
+    return event;
+}
+
+/**
+ * 解析 ICS 日期字符串为 ISO 8601 格式
+ * 支持: 20250101T140000Z, 20250101T140000, 20250101
+ */
+function parseICSDate(dateStr, isAllDay) {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+
+    // 移除可能的 T 和 Z
+    const cleaned = dateStr.replace(/[TZ]/g, ' ').trim();
+
+    let year, month, day, hours = 0, minutes = 0, seconds = 0;
+
+    if (cleaned.length >= 8) {
+        year = parseInt(cleaned.substring(0, 4), 10);
+        month = parseInt(cleaned.substring(4, 6), 10);
+        day = parseInt(cleaned.substring(6, 8), 10);
+    } else {
+        return null;
+    }
+
+    if (cleaned.length >= 15 && !isAllDay) {
+        hours = parseInt(cleaned.substring(9, 11), 10) || 0;
+        minutes = parseInt(cleaned.substring(11, 13), 10) || 0;
+        seconds = parseInt(cleaned.substring(13, 15), 10) || 0;
+    }
+
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+
+    const pad = function(n) { return String(n).padStart(2, '0'); };
+
+    if (isAllDay) {
+        return year + '-' + pad(month) + '-' + pad(day);
+    }
+    return year + '-' + pad(month) + '-' + pad(day) + 'T' + pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+}
+
+/**
+ * 解析 RRULE 字符串为简单配置对象
+ */
+function parseRRule(rruleStr, dtstart) {
+    if (typeof RRule === 'undefined') {
+        console.warn('RRule 库未加载，跳过重复规则解析');
+        return null;
+    }
+
+    try {
+        const parts = rruleStr.split(';');
+        const config = { dtstart: new Date(dtstart) };
+
+        for (const part of parts) {
+            const eqIdx = part.indexOf('=');
+            if (eqIdx === -1) continue;
+            const key = part.substring(0, eqIdx).trim().toUpperCase();
+            const val = part.substring(eqIdx + 1).trim();
+
+            switch (key) {
+                case 'FREQ':
+                    switch (val.toUpperCase()) {
+                        case 'DAILY': config.freq = RRule.DAILY; break;
+                        case 'WEEKLY': config.freq = RRule.WEEKLY; break;
+                        case 'MONTHLY': config.freq = RRule.MONTHLY; break;
+                        case 'YEARLY': config.freq = RRule.YEARLY; break;
+                        default: config.freq = RRule.DAILY;
+                    }
+                    break;
+                case 'INTERVAL':
+                    config.interval = parseInt(val, 10) || 1;
+                    break;
+                case 'UNTIL':
+                    const untilDate = parseICSDate(val.replace(/Z$/, ''), false);
+                    if (untilDate) config.until = new Date(untilDate);
+                    break;
+                case 'BYDAY':
+                    config.byweekday = val.split(',').map(function(d) {
+                        const dayMap = { MO: RRule.MO, TU: RRule.TU, WE: RRule.WE, TH: RRule.TH, FR: RRule.FR, SA: RRule.SA, SU: RRule.SU };
+                        return dayMap[d.trim().toUpperCase()] || null;
+                    }).filter(Boolean);
+                    break;
+                case 'COUNT':
+                    config.count = parseInt(val, 10);
+                    break;
+            }
+        }
+
+        if (!config.freq) return null;
+
+        // 验证 RRule 合法性
+        new RRule(config);
+        return config;
+    } catch (e) {
+        console.warn('RRule 解析失败:', rruleStr, e);
+        return null;
+    }
+}
+
+/**
+ * 解码 ICS 转义字符
+ */
+function decodeICSString(str) {
+    if (!str) return '';
+    return str
+        .replace(/\\,/g, ',')
+        .replace(/\\;/g, ';')
+        .replace(/\\\\/g, '\\')
+        .replace(/\\n/g, '\n')
+        .replace(/\\N/g, '\n');
+}
+
+// ==========================================
+// 订阅管理器
+// ==========================================
+
+/**
+ * 获取所有订阅源
+ */
+function getSubscriptions() {
+    try {
+        return JSON.parse(localStorage.getItem(SUBSCRIPTIONS_KEY) || '[]');
+    } catch (e) {
+        console.error('读取订阅列表失败:', e);
+        return [];
+    }
+}
+
+/**
+ * 保存订阅源列表
+ */
+function saveSubscriptions(subs) {
+    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subs));
+}
+
+/**
+ * 获取订阅事件缓存
+ */
+function getSubscriptionCache() {
+    try {
+        return JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+/**
+ * 保存订阅事件缓存
+ */
+function saveSubscriptionCache(cache) {
+    localStorage.setItem(SUB_CACHE_KEY, JSON.stringify(cache));
+}
+
+/**
+ * 添加订阅源
+ */
+async function addSubscription(name, url, color) {
+    if (!name || !url) {
+        throw new Error('名称和链接不能为空');
+    }
+
+    // 基本 URL 校验
+    try {
+        new URL(url);
+    } catch (e) {
+        throw new Error('无效的订阅链接格式');
+    }
+
+    const subs = getSubscriptions();
+    const id = 'sub_' + Date.now();
+
+    const newSub = {
+        id: id,
+        name: name.trim(),
+        url: url.trim(),
+        color: color || SUBSCRIPTION_COLORS[subs.length % SUBSCRIPTION_COLORS.length].bg,
+        textColor: SUBSCRIPTION_COLORS.find(function(c) { return c.bg === color; })?.text || '#ffffff',
+        enabled: true,
+        lastSync: null,
+        error: null
+    };
+
+    subs.push(newSub);
+    saveSubscriptions(subs);
+
+    // 立即同步一次
+    await syncSubscription(id);
+
+    return newSub;
+}
+
+/**
+ * 删除订阅源
+ */
+function deleteSubscription(subId) {
+    let subs = getSubscriptions();
+    subs = subs.filter(function(s) { return s.id !== subId; });
+    saveSubscriptions(subs);
+
+    // 清理缓存
+    const cache = getSubscriptionCache();
+    delete cache[subId];
+    saveSubscriptionCache(cache);
+}
+
+/**
+ * 切换订阅源启用状态
+ */
+function toggleSubscription(subId) {
+    const subs = getSubscriptions();
+    const sub = subs.find(function(s) { return s.id === subId; });
+    if (sub) {
+        sub.enabled = !sub.enabled;
+        saveSubscriptions(subs);
+        refreshCalendarData();
+    }
+}
+
+/**
+ * 同步单个订阅源
+ */
+async function syncSubscription(subId) {
+    const subs = getSubscriptions();
+    const sub = subs.find(function(s) { return s.id === subId; });
+    if (!sub) return;
+
+    let lastError = null;
+    let icsText = null;
+
+    // 尝试多种方式获取 ICS 内容（直连 → CORS 代理）
+    for (const proxy of CORS_PROXIES) {
+        try {
+            const fetchUrl = proxy ? (proxy + encodeURIComponent(sub.url)) : sub.url;
+            console.log('[订阅] 尝试获取: ' + fetchUrl.substring(0, 80) + '...');
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(function() { controller.abort(); }, 15000);
+
+            const resp = await fetch(fetchUrl, {
+                signal: controller.signal,
+                headers: { 'Accept': 'text/calendar, text/plain, */*' }
+            });
+            clearTimeout(timeoutId);
+
+            if (!resp.ok) {
+                throw new Error('HTTP ' + resp.status + ': ' + resp.statusText);
+            }
+
+            icsText = await resp.text();
+
+            // 验证是否为 ICS 内容
+            if (!icsText.includes('BEGIN:VCALENDAR') && !icsText.includes('BEGIN:VEVENT')) {
+                throw new Error('返回内容不是有效的 ICS 日历格式');
+            }
+
+            break;
+        } catch (e) {
+            lastError = e;
+            console.warn('[订阅] 获取失败 (' + (proxy || '直连') + '):', e.message);
+        }
+    }
+
+    if (!icsText) {
+        sub.error = lastError ? lastError.message : '未知错误';
+        sub.lastSync = new Date().toISOString();
+        const idx = subs.findIndex(function(s) { return s.id === subId; });
+        if (idx !== -1) subs[idx] = sub;
+        saveSubscriptions(subs);
+        throw new Error('所有获取方式均失败: ' + sub.error);
+    }
+
+    // 解析 ICS
+    let events;
+    try {
+        events = parseICS(icsText, subId);
+    } catch (parseErr) {
+        sub.error = '解析失败: ' + parseErr.message;
+        sub.lastSync = new Date().toISOString();
+        const idx = subs.findIndex(function(s) { return s.id === subId; });
+        if (idx !== -1) subs[idx] = sub;
+        saveSubscriptions(subs);
+        throw parseErr;
+    }
+
+    // 保存缓存
+    const cache = getSubscriptionCache();
+    cache[subId] = events;
+    saveSubscriptionCache(cache);
+
+    // 更新订阅状态
+    sub.error = null;
+    sub.lastSync = new Date().toISOString();
+    const idx = subs.findIndex(function(s) { return s.id === subId; });
+    if (idx !== -1) subs[idx] = sub;
+    saveSubscriptions(subs);
+
+    console.log('[订阅] "' + sub.name + '" 同步成功，' + events.length + ' 个事件');
+    return events;
+}
+
+/**
+ * 同步所有启用的订阅源
+ */
+async function syncAllSubscriptions() {
+    const subs = getSubscriptions().filter(function(s) { return s.enabled; });
+    if (subs.length === 0) return;
+
+    console.log('[订阅] 开始同步 ' + subs.length + ' 个订阅源...');
+    const results = await Promise.allSettled(
+        subs.map(function(sub) { return syncSubscription(sub.id); })
+    );
+
+    let successCount = 0;
+    let failCount = 0;
+    results.forEach(function(r, i) {
+        if (r.status === 'fulfilled') {
+            successCount++;
+        } else {
+            failCount++;
+            console.warn('[订阅] "' + subs[i].name + '" 同步失败:', r.reason);
+        }
+    });
+
+    console.log('[订阅] 同步完成: ' + successCount + ' 成功, ' + failCount + ' 失败');
+
+    if (successCount > 0) {
+        refreshCalendarData();
+    }
+}
+
+/**
+ * 手动触发所有订阅同步（用户点击）
+ */
+async function manualRefreshSubscriptions() {
+    const subs = getSubscriptions().filter(function(s) { return s.enabled; });
+    if (subs.length === 0) {
+        alert('没有启用的订阅源');
+        return;
+    }
+
+    const refreshBtn = document.getElementById('subscriptionRefreshBtn');
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> 同步中...';
+    }
+
+    try {
+        await syncAllSubscriptions();
+        renderSubscriptionList();
+        alert('订阅刷新完成');
+    } catch (e) {
+        console.error('手动刷新订阅失败:', e);
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="ri-refresh-line"></i> 刷新全部';
+        }
+    }
+}
+
+// --- UI 渲染函数 ---
+
+/**
+ * 打开订阅管理弹窗
+ */
+function openSubscriptionManager() {
+    const modal = document.getElementById('subscriptionModal');
+    if (!modal) {
+        console.error('订阅管理弹窗不存在');
+        return;
+    }
+    renderSubscriptionList();
+    modal.showModal();
+}
+
+/**
+ * 关闭订阅管理弹窗
+ */
+function closeSubscriptionManager() {
+    const modal = document.getElementById('subscriptionModal');
+    if (modal) modal.close();
+}
+
+/**
+ * 渲染订阅列表
+ */
+function renderSubscriptionList() {
+    const container = document.getElementById('subscriptionList');
+    if (!container) return;
+
+    const subs = getSubscriptions();
+    const cache = getSubscriptionCache();
+
+    if (subs.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-sub);"><i class="ri-calendar-2-line" style="font-size:2rem; display:block; margin-bottom:10px;"></i>暂无订阅源，点击上方按钮添加</div>';
+        return;
+    }
+
+    container.innerHTML = subs.map(function(sub) {
+        const cachedCount = (cache[sub.id] || []).length;
+        const statusIcon = sub.enabled
+            ? (sub.error ? '⚠️' : '✅')
+            : '⏸️';
+        const statusClass = sub.error ? 'sub-status-error' : (sub.enabled ? 'sub-status-ok' : 'sub-status-paused');
+        const lastSyncText = sub.lastSync
+            ? new Date(sub.lastSync).toLocaleString('zh-CN')
+            : '从未同步';
+
+        return '<div class="subscription-item ' + statusClass + '">' +
+            '<div class="sub-item-header">' +
+                '<span class="sub-color-dot" style="background:' + sub.color + '"></span>' +
+                '<span class="sub-name">' + escapeHtml(sub.name) + '</span>' +
+                '<span class="sub-status-text">' + statusIcon + '</span>' +
+            '</div>' +
+            '<div class="sub-item-body">' +
+                '<div class="sub-url" title="' + escapeHtml(sub.url) + '">' +
+                    escapeHtml(sub.url.substring(0, 50)) + (sub.url.length > 50 ? '...' : '') +
+                '</div>' +
+                '<div class="sub-meta">' +
+                    '<span>事件: ' + cachedCount + '</span>' +
+                    '<span>同步: ' + lastSyncText + '</span>' +
+                '</div>' +
+                (sub.error ? '<div class="sub-error">' + escapeHtml(sub.error) + '</div>' : '') +
+            '</div>' +
+            '<div class="sub-item-actions">' +
+                '<button class="btn btn-small" onclick="syncSubscription(\'' + sub.id + '\').then(function(){ renderSubscriptionList(); refreshCalendarData(); }).catch(function(){ renderSubscriptionList(); })" title="立即同步">' +
+                    '<i class="ri-refresh-line"></i>' +
+                '</button>' +
+                '<button class="btn btn-small" onclick="toggleSubscription(\'' + sub.id + '\'); renderSubscriptionList();" title="' + (sub.enabled ? '禁用' : '启用') + '">' +
+                    '<i class="' + (sub.enabled ? 'ri-pause-line' : 'ri-play-line') + '"></i>' +
+                '</button>' +
+                '<button class="btn btn-small btn-danger" onclick="if(confirm(\'确定删除订阅「' + escapeHtml(sub.name) + '」？\')){ deleteSubscription(\'' + sub.id + '\'); renderSubscriptionList(); refreshCalendarData(); }" title="删除">' +
+                    '<i class="ri-delete-bin-line"></i>' +
+                '</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+/**
+ * 处理添加订阅表单提交
+ */
+async function handleAddSubscription() {
+    const nameInput = document.getElementById('subNameInput');
+    const urlInput = document.getElementById('subUrlInput');
+    const colorInput = document.getElementById('subColorSelect');
+    const addBtn = document.getElementById('subAddBtn');
+
+    if (!nameInput || !urlInput) return;
+
+    const name = nameInput.value.trim();
+    const url = urlInput.value.trim();
+    const color = colorInput ? colorInput.value : null;
+
+    if (!name || !url) {
+        alert('请填写订阅名称和链接');
+        return;
+    }
+
+    if (addBtn) {
+        addBtn.disabled = true;
+        addBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> 添加中...';
+    }
+
+    try {
+        await addSubscription(name, url, color);
+        nameInput.value = '';
+        urlInput.value = '';
+        renderSubscriptionList();
+        refreshCalendarData();
+    } catch (e) {
+        alert('添加失败: ' + e.message);
+    } finally {
+        if (addBtn) {
+            addBtn.disabled = false;
+            addBtn.innerHTML = '<i class="ri-add-line"></i> 添加';
+        }
+    }
+}
+
+/**
+ * HTML 转义（防 XSS）
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+}
+
+// --- 初始化 ---
+
+/**
+ * 启动自动刷新定时器
+ */
+let subscriptionRefreshTimer = null;
+
+function startAutoRefresh() {
+    if (subscriptionRefreshTimer) {
+        clearInterval(subscriptionRefreshTimer);
+    }
+
+    // 首次延迟 10 秒后执行（等页面初始化完成）
+    setTimeout(function() {
+        syncAllSubscriptions();
+    }, 10000);
+
+    // 定期刷新
+    subscriptionRefreshTimer = setInterval(function() {
+        syncAllSubscriptions();
+    }, AUTO_REFRESH_INTERVAL);
+
+    console.log('[订阅] 自动刷新已启动（间隔: ' + (AUTO_REFRESH_INTERVAL / 60000) + ' 分钟）');
+}
+
+// 页面加载后启动自动刷新
+setTimeout(function() {
+    startAutoRefresh();
+}, 3000);
+
 // #endregion
 
 // #region 14. 日程导出功能 =========================
